@@ -1,2 +1,3 @@
 # ut-raft
-RAFT is a Python based testing framework for writing engineering tests. It provides a modular, config driven, low level testing framework
+
+This is a RAFT Common plugin to support ut-core framework as required
