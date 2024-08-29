@@ -12,8 +12,26 @@ from framework.core.commandModules.sshConsole import sshConsole
 from ut_core import UTCoreMenuNavigator
 
 if __name__ == "__main__":
-    CONSOLE = sshConsole("localhost", "FKC01", "", port = 22)
-    CONSOLE.open()
+    
+    try:
+        CONSOLE = sshConsole("localhost", "FKC01", "", port = 22)
+        CONSOLE.open()
+        CONSOLE.open_interactive_shell()
 
-    UT = UTCoreMenuNavigator("/home/FKC01/ut-raft/ut_menu.yml", CONSOLE)
 
+        UT = UTCoreMenuNavigator("/home/FKC01/ut-raft/ut_menu.yml", CONSOLE)
+
+        # Run a specific test
+        test_passed = UT.run_test('L1 plat_power', 'PLAT_INIT_L1_positive')
+
+        if test_passed:
+            print("Test executed and passed.")
+        else:
+            print("Test execution failed.")
+        
+        # Close the SSH connection
+        CONSOLE.close()
+    
+    except Exception as e:  
+        CONSOLE.close()
+        print(e)
