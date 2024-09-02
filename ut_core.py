@@ -28,6 +28,28 @@ class UTCoreMenuNavigator:
             self.test_profile = None
 
     
+    def find_key(self, d, target_key):
+        """
+        Recursively searches for a target key in a nested dictionary and returns the corresponding value.
+
+        Args:
+            d (dict): The dictionary to search in.
+            target_key (str): The key to search for.
+
+        Returns:
+            The value associated with the target key if found, else None.
+        """
+        if target_key in d:
+            return d[target_key]
+        
+        for key, value in d.items():
+            if isinstance(value, dict):
+                result = self.find_key(value, target_key)
+                if result is not None:
+                    return result
+        return None
+
+
     def load_yaml(self, path):
         """
         Loads and parses a YAML file from the specified path.
@@ -40,6 +62,25 @@ class UTCoreMenuNavigator:
         """
         with open(path, 'r') as file:
             return yaml.safe_load(file)
+        
+    
+    def run_commands(self, run_script_path, group_index, test_index):
+        """
+        Executes a sequence of commands in the session shell to run a specific test.
+
+        Args:
+            run_script_path (str): The file path to the script that initiates the test run.
+            group_index (str): The index of the group to select within the menu system.
+            test_index (str): The index of the test to select within the selected group.
+
+        Returns:
+            None
+        """
+        self.session.write_to_shell(run_script_path)
+        self.session.write_to_shell("s",1)
+        self.session.write_to_shell(group_index, 1)
+        self.session.write_to_shell("s", 1)
+        self.session.write_to_shell(test_index, 1)
 
     
     def navigate_to_test(self, group_name, test_name):
@@ -60,7 +101,10 @@ class UTCoreMenuNavigator:
         test_found = False
 
         # Navigate to the correct group
-        for group in self.menu_config['tvsettings']['control']['menu']['groups']:
+        groups = self.find_key(self.menu_config, 'groups')
+        group_index = 0
+        for group in groups:
+            group_index += 1
             if group['name'] == group_name:
                 group_found = True
                 print(f"Found group: {group_name}")
@@ -70,7 +114,9 @@ class UTCoreMenuNavigator:
             raise ValueError(f"Group '{group_name}' not found in menu configuration.")
 
         # Navigate to the correct test
+        test_index = 0
         for test in group['tests']:
+            test_index += 1
             if test == test_name:
                 test_found = True
                 print(f"Found test: {test_name}")
@@ -79,12 +125,7 @@ class UTCoreMenuNavigator:
         if not test_found:
             raise ValueError(f"Test '{test_name}' not found in group '{group_name}'.")
 
-        self.session.write_to_shell("/home/FKC01/rdk-halif-power_manager/ut/bin/run.sh")
-        self.session.write_to_shell("s",3)
-        self.session.write_to_shell("1", 3)
-        self.session.write_to_shell("s", 3)
-        self.session.write_to_shell("1", 3)
-
+        self.run_commands("/home/FKC01/rdk-halif-power_manager/ut/bin/run.sh", str(group_index), str(test_index))
         full_output = self.session.get_full_output()
 
         return full_output
