@@ -29,23 +29,15 @@ sys.path.append(dir_path+"/../../../")
 
 from framework.core.testControl import testController
 
-class ut_helper(testController):
+class utHelperClass(testController):
     """
     Unit Test Helper Code
 
     This module provides basic common extensions for unit testing, interacting with devices,
     and managing files.
     """
-
     def __init__(self, testName, qcId, log=None ):
-        """Init the testController & the mesh specific config parsing
-
-        Args:
-            testName (string): name of the test
-            qcId (string): QC ID
-            log (object, optional): log handler from upper layers
-        """
-        testController.__init__(self, testName, qcId, log=log )
+        super().__init__(testName, qcId, log=log )
 
     def waitForBoot(self):
         """
@@ -104,7 +96,7 @@ class ut_helper(testController):
         Returns:
             str: The session output up to and including the found message.
         """
-        self.log.debug("waitForSessionMessage([{}])".format(message))
+        self.log.debug("waitForSessionMessage([{}])".format(message).format(dut))
 
         activeDevice = self.devices.getDevice(device)
         session = activeDevice.getConsoleSession()
