@@ -1,17 +1,18 @@
 
-import socket
-import time
+import sys
 import yaml
 import re
 
-from python_raft.framework.core.logModule import logModule
+sys.path.append('/home/FKC01/python_raft')
+
+from framework.core.logModule import logModule
 
 class UTCoreMenuNavigator:
     """
     Navigates through the UTcore menu system, trigger the execution of test cases, and collect results.
     """
 
-    def __init__(self, menu_config_path, console, test_profile_url=None):
+    def __init__(self, menu_config_path, console):
         """
         Initializes the UTCoreMenuNavigator object with a menu configuration file and an optional test profile.
 
@@ -24,11 +25,6 @@ class UTCoreMenuNavigator:
         self.menu_config = self.load_yaml(menu_config_path)
         self.shell = self.session.open_interactive_shell()
         self.log = logModule("UTCoreMenuNavigator")
-
-        if test_profile_url:
-            self.test_profile = self.load_yaml(test_profile_url)
-        else:
-            self.test_profile = None
 
     
     def find_key(self, d, target_key):
@@ -66,74 +62,66 @@ class UTCoreMenuNavigator:
         with open(path, 'r') as file:
             return yaml.safe_load(file)
         
-    
-    def run_commands(self, run_script_path, group_index, test_index):
+
+    def run_commands(self, run_script_path, group_name, test_name):
         """
         Executes a sequence of commands in the session shell to run a specific test.
+        After typing 's', it outputs the available groups and tests to assist with the selection.
+        It then finds the corresponding indexes for the requested group and test.
 
         Args:
             run_script_path (str): The file path to the script that initiates the test run.
-            group_index (str): The index of the group to select within the menu system.
-            test_index (str): The index of the test to select within the selected group.
-
-        Returns:
-            None
-        """
-        self.session.write_to_shell(run_script_path)
-        self.session.write_to_shell("s",1)
-        self.session.write_to_shell(group_index, 1)
-        self.session.write_to_shell("s", 1)
-        self.session.write_to_shell(test_index, 1)
-
-    
-    def navigate_to_test(self, group_name, test_name):
-        """
-        Navigates the menu system to locate the specified test case.
-
-        Args:
             group_name (str): The name of the test group to navigate to.
             test_name (str): The name of the specific test case to locate.
 
         Returns:
-            str: The full output from the system after navigation and test execution.
-
-        Raises:
-            ValueError: If the specified group or test is not found in the menu configuration.
+            None
         """
-        group_found = False
-        test_found = False
-
-        # Navigate to the correct group
-        groups = self.find_key(self.menu_config, 'groups')
-        group_index = 0
-        for group in groups:
-            group_index += 1
-            if group['name'] == group_name:
-                group_found = True
-                self.log.info(f"Found group: {group_name}")
-                break
-
-        if not group_found:
+        self.session.write(run_script_path)
+        
+        group_output = self.session.write("s")
+        
+        # Extract group index from the output
+        group_index = self.find_index_in_output(group_output, group_name)
+        if group_index is None:
             self.log.error(f"Group '{group_name}' not found in menu configuration.")
-            raise ValueError(f"Group '{group_name}' not found in menu configuration.")
+            raise ValueError(f"Group '{group_name}' not found in the shell output.")
+        
+        self.log.info(f"Found group: {group_name}")
+        self.session.write(str(group_index))
 
-        # Navigate to the correct test
-        test_index = 0
-        for test in group['tests']:
-            test_index += 1
-            if test == test_name:
-                test_found = True
-                self.log.info(f"Found test: {test_name}")
-                break
-
-        if not test_found:
+        
+        test_output = self.session.write("s")        
+        
+        # Extract test index from the output
+        test_index = self.find_index_in_output(test_output, test_name)
+        if test_index is None:
             self.log.error(f"Test '{test_name}' not found in group '{group_name}'.")
-            raise ValueError(f"Test '{test_name}' not found in group '{group_name}'.")
+            raise ValueError(f"Test '{test_name}' not found in the shell output.")
+        
+        self.log.info(f"Found test: {test_name}")
+        self.session.write(str(test_index))
 
-        self.run_commands("/home/FKC01/rdk-halif-power_manager/ut/bin/run.sh", str(group_index), str(test_index))
-        full_output = self.session.get_full_output()
 
-        return full_output
+    def find_index_in_output(self, output, target_name):
+        """
+        Finds the index of a target name in the shell output.
+
+        Args:
+            output (str): The shell output to search in.
+            target_name (str): The name of the group or test to find.
+
+        Returns:
+            int: The index of the target_name if found, otherwise None.
+        """
+        lines = output.splitlines()
+        for line in lines:
+            if target_name in line:
+                # Looking for the index e.g., "1. GroupName"
+                match = re.match(r"(\d+)\.", line.strip())
+                if match:
+                    return int(match.group(1))
+        return None
 
 
     def collect_results(self, output):
@@ -180,16 +168,19 @@ class UTCoreMenuNavigator:
             return None
 
 
-    def run_test(self, group_name, test_name):
+    def run_test(self, run_script_path, group_name, test_name):
         """
         Executes the specified test by navigating to it and collecting the results.
 
         Args:
+            run_script_path (str): The file path to the script that initiates the test run.
             group_name (str): The name of the test group to navigate to.
             test_name (str): The name of the specific test case to execute.
 
         Returns:
             bool: The result of the test execution, True if the test passed, False otherwise.
         """
-        output = self.navigate_to_test(group_name, test_name)
-        return self.collect_results(output)
+        self.run_commands(run_script_path, group_name, test_name)
+        full_output = self.session.read_all()
+
+        return self.collect_results(full_output)
