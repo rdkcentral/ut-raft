@@ -3,8 +3,6 @@ import sys
 import yaml
 import re
 
-sys.path.append('/home/FKC01/python_raft')
-
 from framework.core.logModule import logModule
 
 class UTCoreMenuNavigator:

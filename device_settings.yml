@@ -1,7 +1,0 @@
-ProductA:
-# Using latest released profile on main
-  test_profile: https://github.com/rdkcentral/RaftTestProfiles/blob/main/panel/HPK_ProductATestProfile.yaml 
-...
-# Fixed version profile version 1.0.0
-ProductA:  
-  test_profile: https://github.com/rdkcentral/RaftTestProfiles/blob/1.0.0/panel/HPK_PanelATestProfile.yaml
