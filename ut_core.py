@@ -1,47 +1,61 @@
-"""
-Module Structure:
-    - Parse the YAML configuration files to understand the structure of the menu and the available test cases.
-    - Navigate through the UTcore menu system based on the parsed information.
-    - Trigger the execution of a specific test case by interacting with the menu.
-Key Components of the Module:
-    - YAML Parsing: A method to load and parse the YAML files, extracting the necessary information to navigate the menu.
-    - Menu Navigation: Methods to send appropriate commands (e.g., keystrokes) to the system to navigate through the menu.
-    - Test Execution: A method to select and execute a specific test case based on the input provided.
-    - Result Collection: A method to read and interpret the test results from the output.
-"""
-"""
-## Run an individual test
-ut_run.py --group "L1 tvSettings - Bank5,SetDynamicContrast_L1_positive"  -- test "test_l1_tvSettings_positive_GetDynamicContrast"
-## Run a complete group
-ut_run.py --group "L1 tvSettings - Bank5,SetDynamicContrast_L1_positive" # Runs the whole group
-# Specify a test profile
-ut_run.py --test_profile https://github.com/rdkcentral/RaftTestProfiles/blobk/main/panel/HPK_ProductATestProfile.yaml ----group "L1 tvSettings - Bank5,SetDynamicContrast_L1_positive"
-"""
 
-
+import socket
+import time
 import yaml
-import subprocess
 import re
 
 class UTCoreMenuNavigator:
+    """
+    Navigates through the UTcore menu system, trigger the execution of test cases, and collect results.
+    """
+
     def __init__(self, menu_config_path, console, test_profile_url=None):
+        """
+        Initializes the UTCoreMenuNavigator object with a menu configuration file and an optional test profile.
+
+        Args:
+            menu_config_path (str): The file path to the menu configuration YAML file.
+            console: The console session object to communicate with the UTcore system.
+            test_profile_url (str, optional): The URL to a test profile YAML file. Defaults to None.
+        """
         self.session = console
         self.menu_config = self.load_yaml(menu_config_path)
+        self.shell = self.session.open_interactive_shell()
+
         if test_profile_url:
             self.test_profile = self.load_yaml(test_profile_url)
         else:
             self.test_profile = None
 
+    
     def load_yaml(self, path):
-        # responsible for loading and parsing the YAML files
-        # parsed data stored in self.menu_config and self.test_profile
+        """
+        Loads and parses a YAML file from the specified path.
+
+        Args:
+            path (str): The file path to the YAML file.
+
+        Returns:
+            dict: The parsed YAML content.
+        """
         with open(path, 'r') as file:
             return yaml.safe_load(file)
 
+    
     def navigate_to_test(self, group_name, test_name):
-        # navigate through the UTCore menu to reach the desired test group and test case
-        # simulates sending navigation commands (e.g., selecting a suite, selecting a test) using the send_command method
-        # needs to be replaced with actual system interactions.
+        """
+        Navigates the menu system to locate the specified test case.
+
+        Args:
+            group_name (str): The name of the test group to navigate to.
+            test_name (str): The name of the specific test case to locate.
+
+        Returns:
+            str: The full output from the system after navigation and test execution.
+
+        Raises:
+            ValueError: If the specified group or test is not found in the menu configuration.
+        """
         group_found = False
         test_found = False
 
@@ -65,57 +79,71 @@ class UTCoreMenuNavigator:
         if not test_found:
             raise ValueError(f"Test '{test_name}' not found in group '{group_name}'.")
 
-        # Simulate navigation commands
-        self.send_command("s")  # 's' to select the suite
-        self.send_command("1")
-        self.send_command("s")  # 's' to select the suite
-        self.send_command("1")
+        self.session.write_to_shell("/home/FKC01/rdk-halif-power_manager/ut/bin/run.sh")
+        self.session.write_to_shell("s",3)
+        self.session.write_to_shell("1", 3)
+        self.session.write_to_shell("s", 3)
+        self.session.write_to_shell("1", 3)
 
-    def run_test(self, group_name, test_name):
-        # 1st navigates to the desired test using navigate_to_test and then runs the test
-        # test execution is simulated with a subprocess.run command, which captures the output of the test run
-        self.navigate_to_test(group_name, test_name)
+        full_output = self.session.get_full_output()
 
-        # Command to execute the test binary (replace this with actual command execution logic)
-        result = subprocess.run(['ut-raft/run.sh'], capture_output=True, text=True)
-# ssh read write
-        
-        # Collect results
-        return self.collect_results(result.stdout)
+        return full_output
+
 
     def collect_results(self, output):
-        # interpret the test output to determine whether the test passed or failed
-        success_pattern = r"Total Number of Failures\s*:\s*0"
-        failure_pattern = r"Total Number of Failures\s*:\s*\d+"
+        """
+        Collects and interprets the results from the test execution output.
 
-        if re.search(success_pattern, output):
-            print("Test passed successfully.")
-            return True
-        elif re.search(failure_pattern, output):
-            print("Test failed.")
-            return False
+        Args:
+            output (str): The output from the test execution.
+
+        Returns:
+            bool: True if the test passed successfully, False if the test failed, or None if the output format is unexpected.
+        """
+        
+        # Pattern to detect the number of suites, tests, and asserts with their corresponding results
+        # Run Summary:    Type  Total    Ran Passed Failed Inactive
+        #       suites      2      0    n/a      0        0
+        #        tests     16      1      1      0        0
+        #      asserts      2      2      2      0      n/a
+        run_summary_pattern = r"Run Summary:\s+Type\s+Total\s+Ran\s+Passed\s+Failed\s+Inactive"
+        summary_match = re.search(run_summary_pattern, output)
+
+        if summary_match:
+            # Extract the relevant lines for suites, tests, and asserts
+            suite_summary_line = re.search(r"suites\s+\d+\s+\d+\s+n/a\s+(\d+)\s+\d+", output)
+            test_summary_line = re.search(r"tests\s+\d+\s+\d+\s+(\d+)\s+(\d+)\s+\d+", output)
+            assert_summary_line = re.search(r"asserts\s+\d+\s+\d+\s+(\d+)\s+(\d+)\s+n/a", output)
+
+            if suite_summary_line and test_summary_line and assert_summary_line:
+                suites_failed = int(suite_summary_line.group(1))
+                tests_failed = int(test_summary_line.group(2))
+                asserts_failed = int(assert_summary_line.group(2))
+
+                if suites_failed == 0 and tests_failed == 0 and asserts_failed == 0:
+                    print("Test passed successfully.")
+                    return True
+                else:
+                    print("Test failed.")
+                    return False
+            else:
+                print("Unexpected output format.")
+                return None
         else:
-            print("Unexpected output format.")
+            print("Run Summary not found.")
             return None
 
-    def send_command(self, command):
-        # placeholder for the actual system interaction logic
-        # needs to send commands to the UTCore system via serial communication or another interface.
-        print(f"Sending command: {command}")
-        # Here you would interact with the actual system, e.g., through serial communication or similar
 
+    def run_test(self, group_name, test_name):
+        """
+        Executes the specified test by navigating to it and collecting the results.
 
+        Args:
+            group_name (str): The name of the test group to navigate to.
+            test_name (str): The name of the specific test case to execute.
 
-
-# UTCoreMenuNavigator class is initialised with the path to a YAML configuration file
-# run_test method is used to navigate to a specific test case and run it
-# results of the test execution are collected and printed
-if __name__ == "__main__":
-    navigator = UTCoreMenuNavigator('ut-raft/ut_menu.yml')
-    test_passed = navigator.run_test('L1 plat_power', 
-                                     'PLAT_INIT_L1_positive')
-
-    if test_passed:
-        print("Test executed and passed.")
-    else:
-        print("Test execution failed.")
+        Returns:
+            bool: The result of the test execution, True if the test passed, False otherwise.
+        """
+        output = self.navigate_to_test(group_name, test_name)
+        return self.collect_results(output)

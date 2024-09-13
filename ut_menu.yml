@@ -10,13 +10,13 @@ tvsettings:  # Prefix must always exist
     menu:
       type: UT-C # C (UT-C Cunit) / C++ (UT-G (g++ ut-core gtest backend))
       groups: 
-        - name: "L1 plat_power"  # Parent Group
+        - name: "L1 plat_power"
           tests:  
-            - "PLAT_INIT_L1_positive"  # Test1
-            - "PLAT_INIT_L1_negative"  # Test2
-            - "non_existent_name"     # Test7
+            - "PLAT_INIT_L1_positive"
+            - "PLAT_INIT_L1_negative"
+            - "non_existent_name"
 
-        - name: "L2 plat_power" # Parent
+        - name: "L2 plat_power"
           tests:
-            - L2_SetAndGetPowerState  # Test 1
-            - L2_SetAndGetWakeupSrc # Test 2
+            - L2_SetAndGetPowerState
+            - L2_SetAndGetWakeupSrc
