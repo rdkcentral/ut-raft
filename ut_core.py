@@ -4,6 +4,8 @@ import time
 import yaml
 import re
 
+from python_raft.framework.core.logModule import logModule
+
 class UTCoreMenuNavigator:
     """
     Navigates through the UTcore menu system, trigger the execution of test cases, and collect results.
@@ -21,6 +23,7 @@ class UTCoreMenuNavigator:
         self.session = console
         self.menu_config = self.load_yaml(menu_config_path)
         self.shell = self.session.open_interactive_shell()
+        self.log = logModule("UTCoreMenuNavigator")
 
         if test_profile_url:
             self.test_profile = self.load_yaml(test_profile_url)
@@ -107,10 +110,11 @@ class UTCoreMenuNavigator:
             group_index += 1
             if group['name'] == group_name:
                 group_found = True
-                print(f"Found group: {group_name}")
+                self.log.info(f"Found group: {group_name}")
                 break
 
         if not group_found:
+            self.log.error(f"Group '{group_name}' not found in menu configuration.")
             raise ValueError(f"Group '{group_name}' not found in menu configuration.")
 
         # Navigate to the correct test
@@ -119,10 +123,11 @@ class UTCoreMenuNavigator:
             test_index += 1
             if test == test_name:
                 test_found = True
-                print(f"Found test: {test_name}")
+                self.log.info(f"Found test: {test_name}")
                 break
 
         if not test_found:
+            self.log.error(f"Test '{test_name}' not found in group '{group_name}'.")
             raise ValueError(f"Test '{test_name}' not found in group '{group_name}'.")
 
         self.run_commands("/home/FKC01/rdk-halif-power_manager/ut/bin/run.sh", str(group_index), str(test_index))
@@ -162,16 +167,16 @@ class UTCoreMenuNavigator:
                 asserts_failed = int(assert_summary_line.group(2))
 
                 if suites_failed == 0 and tests_failed == 0 and asserts_failed == 0:
-                    print("Test passed successfully.")
+                    self.log.info("Test passed successfully.")
                     return True
                 else:
-                    print("Test failed.")
+                    self.log.error("Test failed.")
                     return False
             else:
-                print("Unexpected output format.")
+                self.log.error("Unexpected output format.")
                 return None
         else:
-            print("Run Summary not found.")
+            self.log.error("Run Summary not found.")
             return None
 
 
