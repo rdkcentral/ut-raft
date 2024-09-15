@@ -370,3 +370,124 @@ class utHelperClass(testController):
             # Write each line of the log data to the file
             for writeString in inputLog:
                 fileHandle.write(writeString + "\n")
+
+    def downloadFileToDevice(self, url, target_directory):
+        """
+        Download the file and copy to device directory.
+
+        Args:
+            url (str): url path.
+            target_directory (str): target directory on device.
+        """
+        self.log.step("url( url:'{}' )".format(url))
+        self.log.step("target_directory( target_directory:'{}' )".format(target_directory))
+
+        working_directory = self.outboundClient.workspaceDirectory
+        file_name = os.path.basename(url)
+        self.outboundClient.downloadFile(url, file_name)
+        self.copyFileFromHost(os.path.join(working_directory, file_name), target_directory)
+
+    def downloadFileToHost(self, url):
+        """
+        Download the file and copy to device directory.
+
+        Args:
+            url (str): url path.
+        Returns:
+            downloaded file path
+        """
+        self.log.step("url( url:'{}' )".format(url))
+
+        working_directory = self.outboundClient.workspaceDirectory
+        file_name = os.path.basename(url)
+        self.outboundClient.downloadFile(url, file_name)
+        return os.path.join(working_directory, file_name)
+
+    def downloadAssetsToDevice(self):
+        """
+        Downloads assets to the device.
+
+        Args:
+            None
+        Returns:
+            None
+        """
+        # Download Common artifacts
+        target_directory = self.config.deviceConfig.get(self.device).get("target_directory")
+        common_artifacts = self.testSetup.get("assets").get("device").get("Common").get("artifacts")
+        if common_artifacts is not None:
+            for url in common_artifacts:
+                self.downloadFileToDevice(url, target_directory)
+
+        # Download Common streams
+        common_streams = self.testSetup.get("assets").get("device").get("Common").get("streams")
+        if common_streams is not None:
+            for url in common_streams:
+                self.downloadFileToDevice(url, target_directory)
+
+        # Download test artifacts
+        test_artifacts = self.testSetup.get("assets").get("device").get(self.testName).get("artifacts")
+        if test_artifacts is not None:
+            for url in test_artifacts:
+                self.downloadFileToDevice(url, target_directory)
+
+        self.testStreams = []
+        # Download test streams
+        test_streams = self.testSetup.get("assets").get("device").get(self.testName).get("streams")
+        if test_streams is not None:
+            for url in test_streams:
+                self.downloadFileToDevice(url, target_directory)
+                self.testStreams.append(target_directory + "/" + os.path.basename(url))
+    
+    def runPrerequisiteOnDevice(self):
+        """
+        Runs Prerequisite on the device.
+
+        Args:
+            None
+        Returns:
+            None
+        """
+        # Run Common prerequisites commands
+        common_cmds = self.testSetup.get("assets").get("device").get("Common").get("execute")
+        if common_cmds is not None:
+            for cmd in common_cmds:
+                self.writeCommandOnDevice(cmd, cmd)
+
+        # Run test prerequisites commands
+        test_cmds = self.testSetup.get("assets").get("device").get(self.testName).get("execute")
+        if test_cmds is not None:
+            for cmd in test_cmds:
+                self.writeCommandOnDevice(cmd, cmd)
+
+    def selectGroupTest(self, menuName, waitPrompt=""):
+        """
+        Parse and selects the menu items.
+
+        Args:
+            menuName (str): menu name to parse
+            waitPrompt (str, optional): wait prompt. Defaults to "".
+        Returns:
+            Returns console output
+        """
+
+        #input = self.testGroupConfig.get("input")
+        output = self.writeCommandOnDevice("s", "Enter number of test to select")
+        index = self.UT.find_index_in_output(output, self.testGroupConfig.get("name"))
+        output = self.writeCommandOnDevice(str(index), waitPrompt)
+        return output
+
+    def selectGroupMenus(self, output, inputList):
+        """
+        Parse and selects the menu items.
+
+        Args:
+            output (str) - Console text
+            inputList (list) - menu selection list
+        Returns:
+            None
+        """
+
+        for input in inputList:
+            index = self.UT.find_index_in_output(output, input)
+            output = self.writeCommandOnDevice(str(input), self.queryPrompt)
