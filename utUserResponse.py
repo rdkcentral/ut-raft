@@ -27,20 +27,24 @@ import subprocess
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path+"/../../../")
 
-class utHostUserResponse():
+from framework.core.logModule import logModule
+
+class utUserResponse():
     """Reads the user response
     """
     
-    def __init__(self, log=None):
+    def __init__(self, device:str="host", log:logModule=None):
         """
         Initializes a configuration reader instance based on the parameters.
 
         Args:
+            device (str)
             log (class, optional): Parent log class. Defaults to None.
         """
         self.log = log
+        self.device = device
     
-    def getUserYNFromHost(self, query=""):
+    def getUserYN(self, query="Please Enter Y or N :"):
         """
         Reads Y/N user response to the query.
 
@@ -50,10 +54,27 @@ class utHostUserResponse():
         Returns:
             bool: returns the response
         """
-        print(query)
-        response = input()
+
+        ## TODO: Support other types of device other than host
+        if self.device != "host":
+            return False
+        
+        if self.log is not None:
+            self.log(query)
+        response = input(query)
 
         if response == 'y' or response == 'Y' :
             return True
         else :
             return False
+
+# Test and example usage code
+if __name__ == '__main__':
+    # Test the module
+    prompt = utUserResponse( device="host")
+    result = prompt.getUserYN()
+    print( "result:[{}]".format(result))
+
+    result = prompt.getUserYN("Please Enter Stuff: ")
+    print( "result:[{}]".format(result))
+
