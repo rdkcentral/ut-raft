@@ -22,16 +22,20 @@
 #* ******************************************************************************
 import os
 import sys
+import subprocess
+import time
 
 # Helper always exist in the same directory under raft and can use it for confirmation testing
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path+"/../../../")
 
-class utPlayerClass():
+from framework.core.logModule import logModule
+from interactiveShell import InteractiveShell
+class utPlayer():
     """
     UT Player class
     """
-    def __init__(self, session, log=None):
+    def __init__(self, session:object, log:logModule=None):
         """
         Initializes player class.
 
@@ -42,7 +46,6 @@ class utPlayerClass():
         self.log = log
         self.session = session
         self.playbackTool = "gstreamer" # Assume gstreamer
-
         # Any pre-launch requirements will be met by another class.
         # If there's a `gstreamer` specific requirements if should be met here
     
@@ -59,8 +62,8 @@ class utPlayerClass():
         # Example usage for gst-launch `gst-launch-1.0 filesrc location=/home/yourusername/myvideo.mp4 ! decodebin ! autovideosink`
         # Example usage for gst-play `gst-play-1.0 <file_path>`
         if (self.playbackTool == "gstreamer"):
-            cmd = "gst-play" + " " + streamFile
-            self.session.write(cmd)
+            cmd = "gst-play-1.0" + " " + streamFile
+            self.session.write(cmd+'\n')
 
     def stop(self):
         """
@@ -71,12 +74,26 @@ class utPlayerClass():
         """
         if (self.playbackTool == "gstreamer"):
             self.session.write("q")
-
     
 # Test and example usage code
 if __name__ == '__main__':
+
+    # Assumes that the asset is already transfer to /tmp
     # test the class
-    test = utPlaybackClass(session)
-    test.play()
+    shell = InteractiveShell()
+
+    test = utPlayer(shell)
+    test.play("/tmp/audioTest.mp3")
+
+    # Read and print the output
+    output = shell.read_output()
+    print(output)
+    
     test.stop()
+    
+    # Read and print the output
+    output = shell.read_output()
+    print(output)
+
+    shell.close()
 
