@@ -36,7 +36,7 @@ class utHelperClass(testController):
     This module provides basic common extensions for unit testing, interacting with devices,
     and managing files.
     """
-    def __init__(self, testName, qcId, log=None ):
+    def __init__(self, testName, qcId, log:logModule=None ):
         super().__init__(testName, qcId, log=log )
 
     def waitForBoot(self):
@@ -223,21 +223,21 @@ class utHelperClass(testController):
 
         return message
 
-
 # Device / Host Command operations
 
-    def writeHostCommand(self, command):
+    def writeHostCommands(self, commands: list):
         """
         Executes a command on the host machine (Linux only).
 
         Args:
-            command (str): The command to execute.
+            command (list): The command list execute.
 
         Returns:
             str: The output/result of the command execution.
         """
-        self.log.debug("writeHostCommand()")
-        result = self.syscmd(command)  # Execute the command using syscmd (assuming it's defined elsewhere)
+        self.log.debug("writeHostCommands()")
+        for cmd in commands:
+            result += self.syscmd(cmd)  # Execute the command using syscmd (assuming it's defined elsewhere)
         return result
 
     def flushSessionData(self, timeout=1, device="dut"):
@@ -259,12 +259,12 @@ class utHelperClass(testController):
         result = session.read_all()  # Read all available data from the session
         return result
 
-    def writeCommandOnDevice(self, command, prompt=None, device="dut"):
+    def writeCommandsOnDevice(self, commands:list, prompt:str=None, device:str="dut"):
         """
         Writes a command to the session on the target device and waits for a response.
 
         Args:
-            command (str): The command to execute.
+            commands (list): The command list to execute.
             prompt (str): The expected prompt after the command execution. 
                           If not provided, it will use the default prompt from the device configuration.
             device (str): The device to execute the command on (default: "dut").
@@ -273,35 +273,38 @@ class utHelperClass(testController):
             str: The output/response from the command execution, excluding the command itself and the prompt.
                     If no response is received, an empty string is returned.
         """
-        self.log.debug("writeCommand()")
+        self.log.debug("writeCommand(%s)".format(commands))
 
-        # Send the command and a newline to the device session
-        self.writeMessageToDeviceSession(command, device=device)
-        self.writeMessageToDeviceSession("\n", device=device)
+        # Loop round by the list of commands
+        for cmd in commands:
+            # Send the command and a newline to the device session
+            self.writeMessageToDeviceSession(cmd, device=device)
+            self.writeMessageToDeviceSession("\n", device=device)
 
-        # If no prompt is not provided, use the default prompt from the device configuration
-        if prompt is None:
-            prompt = self.getCPEFieldValue("prompt")
+            # If no prompt is not provided, use the default prompt from the device configuration
+            if prompt is None:
+                prompt = self.getCPEFieldValue("prompt")
 
-        # Wait for the expected prompt or timeout
-        result = self.waitForSessionMessage(prompt, device=device)
+            # Wait for the expected prompt or timeout
+            result = self.waitForSessionMessage(prompt, device=device)
 
-        # Flush any additional data from the session
-        result += self.flushSessionData(device=device)
+            # Flush any additional data from the session
+            result += self.flushSessionData(device=device)
 
-        # Split the result into lines
-        message = result.split("\r\n")
+            # Split the result into lines
+            message = result.split("\r\n")
 
-        # If there are 2 or fewer lines, it means there was no command output
-        if len(message) <= 2:
-            return ""
+            # If there are 2 or fewer lines, it means there was no command output
+            if len(message) <= 2:
+                return ""
 
-        # Remove the first line (the command itself) and the last line (the prompt)
-        message.pop(0)
-        message.pop(len(message) - 1)
+            # Remove the first line (the command itself) and the last line (the prompt)
+            message.pop(0)
+            message.pop(len(message) - 1)
 
-        # Join the remaining lines and return them as the command output
-        return "\r\n".join(message)
+            # Join the remaining lines and return them as the command output
+            result += "\r\n".join(message)
+        return result
 
 ## Useful utility functions
 
@@ -371,123 +374,33 @@ class utHelperClass(testController):
             for writeString in inputLog:
                 fileHandle.write(writeString + "\n")
 
-    def downloadFileToDevice(self, url, target_directory):
+    def downloadToDevice(self, urls: list, target_directory: str, device: str="dut" ):
         """
         Download the file and copy to device directory.
 
         Args:
             url (str): url path.
             target_directory (str): target directory on device.
+            device (str) : device name ( default: "dut" )
         """
         self.log.step("url( url:'{}' )".format(url))
         self.log.step("target_directory( target_directory:'{}' )".format(target_directory))
 
-        working_directory = self.outboundClient.workspaceDirectory
-        file_name = os.path.basename(url)
-        self.outboundClient.downloadFile(url, file_name)
-        self.copyFileFromHost(os.path.join(working_directory, file_name), target_directory)
+        for url in urls:
+            # Download a file into the worksapce on the host
+            # Then copy the file to target
+            file_name = os.path.basename(url)
+            self.outboundClient.downloadFile(url)
+            workspace_directory = self.outboundClient.workspaceDirectory
+            self.copyFileFromHost(os.path.join(workspace_directory, file_name), target_directory, device=device)
 
-    def downloadFileToHost(self, url):
-        """
-        Download the file and copy to device directory.
+# Test and example usage code
+if __name__ == '__main__':
+    # test the class
+    test = utHelperClass("functionTest",1)
+    test.writeCommandsOnDevice()
+    test.writeHostCommands()
 
-        Args:
-            url (str): url path.
-        Returns:
-            downloaded file path
-        """
-        self.log.step("url( url:'{}' )".format(url))
-
-        working_directory = self.outboundClient.workspaceDirectory
-        file_name = os.path.basename(url)
-        self.outboundClient.downloadFile(url, file_name)
-        return os.path.join(working_directory, file_name)
-
-    def downloadAssetsToDevice(self):
-        """
-        Downloads assets to the device.
-
-        Args:
-            None
-        Returns:
-            None
-        """
-        # Download Common artifacts
-        target_directory = self.config.deviceConfig.get(self.device).get("target_directory")
-        common_artifacts = self.testSetup.get("assets").get("device").get("Common").get("artifacts")
-        if common_artifacts is not None:
-            for url in common_artifacts:
-                self.downloadFileToDevice(url, target_directory)
-
-        # Download Common streams
-        common_streams = self.testSetup.get("assets").get("device").get("Common").get("streams")
-        if common_streams is not None:
-            for url in common_streams:
-                self.downloadFileToDevice(url, target_directory)
-
-        # Download test artifacts
-        test_artifacts = self.testSetup.get("assets").get("device").get(self.testName).get("artifacts")
-        if test_artifacts is not None:
-            for url in test_artifacts:
-                self.downloadFileToDevice(url, target_directory)
-
-        self.testStreams = []
-        # Download test streams
-        test_streams = self.testSetup.get("assets").get("device").get(self.testName).get("streams")
-        if test_streams is not None:
-            for url in test_streams:
-                self.downloadFileToDevice(url, target_directory)
-                self.testStreams.append(target_directory + "/" + os.path.basename(url))
-    
-    def runPrerequisiteOnDevice(self):
-        """
-        Runs Prerequisite on the device.
-
-        Args:
-            None
-        Returns:
-            None
-        """
-        # Run Common prerequisites commands
-        common_cmds = self.testSetup.get("assets").get("device").get("Common").get("execute")
-        if common_cmds is not None:
-            for cmd in common_cmds:
-                self.writeCommandOnDevice(cmd, cmd)
-
-        # Run test prerequisites commands
-        test_cmds = self.testSetup.get("assets").get("device").get(self.testName).get("execute")
-        if test_cmds is not None:
-            for cmd in test_cmds:
-                self.writeCommandOnDevice(cmd, cmd)
-
-    def selectGroupTest(self, menuName, waitPrompt=""):
-        """
-        Parse and selects the menu items.
-
-        Args:
-            menuName (str): menu name to parse
-            waitPrompt (str, optional): wait prompt. Defaults to "".
-        Returns:
-            Returns console output
-        """
-
-        #input = self.testGroupConfig.get("input")
-        output = self.writeCommandOnDevice("s", "Enter number of test to select")
-        index = self.UT.find_index_in_output(output, self.testGroupConfig.get("name"))
-        output = self.writeCommandOnDevice(str(index), waitPrompt)
-        return output
-
-    def selectGroupMenus(self, output, inputList):
-        """
-        Parse and selects the menu items.
-
-        Args:
-            output (str) - Console text
-            inputList (list) - menu selection list
-        Returns:
-            None
-        """
-
-        for input in inputList:
-            index = self.UT.find_index_in_output(output, input)
-            output = self.writeCommandOnDevice(str(input), self.queryPrompt)
+# Tests Required
+# - writeHostCommands
+# - writeCommandsOnDevice

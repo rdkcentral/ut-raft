@@ -22,48 +22,49 @@
 #* ******************************************************************************
 import os
 import sys
-import subprocess
 
+# Helper always exist in the same directory under raft and can use it for confirmation testing
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path+"/../../../")
 
-class utPlaybackOnDevice():
+class utPlayerClass():
     """
     UT Player class
-
     """
-    def __init__(self, session, playbackTool="gstreamer", prerequisites="", log=None):
+    def __init__(self, session, log=None):
         """
         Initializes player class.
 
         Args:
-            session (class): The console session object to communicate with the device
-            playbackTool (str, optional): Player tool to play the streams. Defaults to "gstreamer".
-            prerequisites (str, optional): Prerequisites commands required for player. Defaults to "".
+            session (class): The session object to communicate with the device
             log (class, optional): Parent log class. Defaults to None.
         """
         self.log = log
-        self.playbackTool = playbackTool
         self.session = session
+        self.playbackTool = "gstreamer" # Assume gstreamer
 
-        if prerequisites is not None:
-            for cmd in prerequisites:
-                self.session.write(cmd)
+        # Any pre-launch requirements will be met by another class.
+        # If there's a `gstreamer` specific requirements if should be met here
     
-    def utStartPlay(self, streamOnDevice):
+    def play(self, streamFile:str):
         """
-        Starts the playback.
+        Starts the playback of a stream
+        Once started the stream is assumed to be blocking on the device.
+        Unless an error occurs, it will remain running
 
         Args:
-            streamOnDevice (str): Stream path.
+            stream (str): Stream path.
         """
+        #TODO: Upgrade if required or a new function to playback from a URL
+        # Example usage for gst-launch `gst-launch-1.0 filesrc location=/home/yourusername/myvideo.mp4 ! decodebin ! autovideosink`
+        # Example usage for gst-play `gst-play-1.0 <file_path>`
         if (self.playbackTool == "gstreamer"):
-            cmd = "gst-play" + " " + streamOnDevice
+            cmd = "gst-play" + " " + streamFile
             self.session.write(cmd)
 
-    def utStopPlay(self):
+    def stop(self):
         """
-        Stops the playback.
+        Stops the playback of a stream
 
         Args:
             None.
@@ -72,5 +73,10 @@ class utPlaybackOnDevice():
             self.session.write("q")
 
     
-
+# Test and example usage code
+if __name__ == '__main__':
+    # test the class
+    test = utPlaybackClass(session)
+    test.play()
+    test.stop()
 

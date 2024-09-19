@@ -1,30 +1,54 @@
+#!/usr/bin/env python3
+#** *****************************************************************************
+# *
+# * If not stated otherwise in this file or this component's LICENSE file the
+# * following copyright and licenses apply:
+# *
+# * Copyright 2024 RDK Management
+# *
+# * Licensed under the Apache License, Version 2.0 (the "License");
+# * you may not use this file except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *
+# http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *
+#* ******************************************************************************
 
-import sys
 import yaml
-import re
+import sys
+import os
+
+# Helper always exist in the same directory under raft
+dir_path = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(dir_path+"/../../../")
 
 from framework.core.logModule import logModule
 
-class UTCoreMenuNavigator:
+class UTMenuNavigatorClass:
     """
     Navigates through the UTcore menu system, trigger the execution of test cases, and collect results.
     """
 
-    def __init__(self, menu_config_path, console):
+    def __init__(self, menu_config_path:str, console:str):
         """
         Initializes the UTCoreMenuNavigator object with a menu configuration file and an optional test profile.
 
         Args:
             menu_config_path (str): The file path to the menu configuration YAML file.
-            console: The console session object to communicate with the UTcore system.
-            test_profile_url (str, optional): The URL to a test profile YAML file. Defaults to None.
+            console: (str) The console session object to communicate
         """
         self.session = console
-        self.menu_config = self.load_yaml(menu_config_path)
+        self.menu_config = self.__load_yaml__(menu_config_path)
         self.shell = self.session.open_interactive_shell()
         self.log = logModule("UTCoreMenuNavigator")
 
-    
     def find_key(self, d, target_key):
         """
         Recursively searches for a target key in a nested dictionary and returns the corresponding value.
@@ -46,8 +70,7 @@ class UTCoreMenuNavigator:
                     return result
         return None
 
-
-    def load_yaml(self, path):
+    def __load_yaml__(self, path):
         """
         Loads and parses a YAML file from the specified path.
 
@@ -59,7 +82,6 @@ class UTCoreMenuNavigator:
         """
         with open(path, 'r') as file:
             return yaml.safe_load(file)
-        
 
     def run_commands(self, run_script_path, group_name, test_name):
         """
@@ -76,18 +98,33 @@ class UTCoreMenuNavigator:
             None
         """
         self.session.write(run_script_path)
-        
+        self.menu_select( group_name, test_name )
+
+    def menu_select(self, group_name: str, test_name:str, input: list ):
+        """Select a menu from an already running system
+
+        Args:
+            group_name (str): group name
+            test_name (str): test_name
+            input (list): list of input values
+
+        Raises:
+            ValueError: not found in the menu configuration
+            ValueError: not found in the group
+        """
+
+        #TODO: Upgrade this function to navigate to the top menu then work down again, When launched this menu will have no idea what it's currently sitting at prompt wise.
+        #TODO: Support Input from the menu either form the user or the predefined list 
         group_output = self.session.write("s")
         
         # Extract group index from the output
         group_index = self.find_index_in_output(group_output, group_name)
         if group_index is None:
             self.log.error(f"Group '{group_name}' not found in menu configuration.")
-            raise ValueError(f"Group '{group_name}' not found in the shell output.")
+            raise ValueError(f"Group '{group_name}' not found in the menu configuration.")
         
         self.log.info(f"Found group: {group_name}")
         self.session.write(str(group_index))
-
         
         test_output = self.session.write("s")        
         
@@ -95,11 +132,11 @@ class UTCoreMenuNavigator:
         test_index = self.find_index_in_output(test_output, test_name)
         if test_index is None:
             self.log.error(f"Test '{test_name}' not found in group '{group_name}'.")
-            raise ValueError(f"Test '{test_name}' not found in the shell output.")
+            raise ValueError(f"Test '{test_name}' not found in the group.")
         
         self.log.info(f"Found test: {test_name}")
         self.session.write(str(test_index))
-
+        return None
 
     def find_index_in_output(self, output, target_name):
         """
@@ -165,7 +202,6 @@ class UTCoreMenuNavigator:
             self.log.error("Run Summary not found.")
             return None
 
-
     def run_test(self, run_script_path, group_name, test_name):
         """
         Executes the specified test by navigating to it and collecting the results.
@@ -180,5 +216,10 @@ class UTCoreMenuNavigator:
         """
         self.run_commands(run_script_path, group_name, test_name)
         full_output = self.session.read_all()
-
         return self.collect_results(full_output)
+
+# Test and example usage code
+if __name__ == '__main__':
+    # test the class
+    test = UTMenuNavigatorClass(menu_config_path, console)
+    test.menu_select( "Parent", "Child" )
