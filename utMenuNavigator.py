@@ -24,6 +24,7 @@
 import yaml
 import sys
 import os
+import re
 
 # Helper always exist in the same directory under raft
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -32,10 +33,10 @@ sys.path.append(dir_path+"/../../../")
 from framework.core.logModule import logModule
 
 class UTMenuNavigatorClass:
+
     """
     Navigates through the UTcore menu system, trigger the execution of test cases, and collect results.
     """
-
     def __init__(self, menu_config_path:str, console:str):
         """
         Initializes the UTCoreMenuNavigator object with a menu configuration file and an optional test profile.
@@ -158,7 +159,6 @@ class UTMenuNavigatorClass:
                     return int(match.group(1))
         return None
 
-
     def collect_results(self, output):
         """
         Collects and interprets the results from the test execution output.
@@ -202,6 +202,9 @@ class UTMenuNavigatorClass:
             self.log.error("Run Summary not found.")
             return None
 
+    def launch_test(self, run_script_path, group_name):
+        self.session.write(run_script_path)
+
     def run_test(self, run_script_path, group_name, test_name):
         """
         Executes the specified test by navigating to it and collecting the results.
@@ -219,7 +222,12 @@ class UTMenuNavigatorClass:
         return self.collect_results(full_output)
 
 # Test and example usage code
-if __name__ == '__main__':
+#if __name__ == '__main__':
     # test the class
-    test = UTMenuNavigatorClass(menu_config_path, console)
-    test.menu_select( "Parent", "Child" )
+    #test = UTMenuNavigatorClass(menu_config_path, console)
+    #test.menu_select( "Parent", "Child" )
+    #menu_config - is currently not used
+    # Upgrade the help to support menu navigation input via the yaml file
+    # test launch_test
+    # menu_select is working
+    

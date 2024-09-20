@@ -33,7 +33,7 @@ class utUserResponse():
     """Reads the user response
     """
     
-    def __init__(self, device:str="host", log:logModule=None):
+    def __init__(self, log:logModule=None):
         """
         Initializes a configuration reader instance based on the parameters.
 
@@ -42,7 +42,6 @@ class utUserResponse():
             log (class, optional): Parent log class. Defaults to None.
         """
         self.log = log
-        self.device = device
     
     def getUserYN(self, query="Please Enter Y or N :"):
         """
@@ -55,10 +54,6 @@ class utUserResponse():
             bool: returns the response
         """
 
-        ## TODO: Support other types of device other than host
-        if self.device != "host":
-            return False
-        
         if self.log is not None:
             self.log(query)
         response = input(query)
@@ -71,7 +66,7 @@ class utUserResponse():
 # Test and example usage code
 if __name__ == '__main__':
     # Test the module
-    prompt = utUserResponse( device="host")
+    prompt = utUserResponse()
     result = prompt.getUserYN()
     print( "result:[{}]".format(result))
 
