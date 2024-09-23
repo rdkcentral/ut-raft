@@ -33,8 +33,8 @@ from framework.core.outboundClient import outboundClientClass
 from framework.core.logModule import logModule
 from interactiveShell import InteractiveShell
 
-#class utHelperClass(testController):
-class utHelperClass(): # Can be used for testing
+class utHelperClass(testController):
+#class utHelperClass(): # Can be used for testing
     """
     Unit Test Helper Code
 
