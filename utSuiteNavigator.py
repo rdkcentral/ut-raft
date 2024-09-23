@@ -48,9 +48,10 @@ class utCFramework:
         """
         self.prompt=": "
         self.session = session
+        self.log=log
         if log is None:
-            self.log = logModule("utCFramework")
-        self.log.setLevel( self.log.INFO )
+            self.log = logModule(self.__class__.__name__)
+            self.log.setLevel( self.log.INFO )
         self.commandPrompt = r"command: "  # CUnit Prompt
         self.selectPrompt = r"\) : "
 
@@ -226,7 +227,7 @@ class UTSuiteNavigatorClass:
         self.session = session
         self.config = ConfigRead(config, startKey)
         if log is None:
-            self.log = logModule("UTSuiteNavigatorClass")
+            self.log = logModule(self.__class__.__name__)
         test_type = self.config.test.type
         self.log.setLevel( self.log.INFO )
         if test_type == "UT-C" or test_type == "C":

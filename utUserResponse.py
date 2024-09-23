@@ -42,7 +42,10 @@ class utUserResponse():
             log (class, optional): Parent log class. Defaults to None.
         """
         self.log = log
-    
+        if log is None:
+            self.log = logModule(self.__class__.__name__)
+            self.log.setLevel( self.log.INFO )
+
     def getUserYN(self, query="Please Enter Y or N :"):
         """
         Reads Y/N user response to the query.

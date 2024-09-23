@@ -32,6 +32,7 @@ import atexit
 import re
 
 #TODO: Move to raft framework, this module is ideal for local testing
+#TODO: Write data to a file and have a read / write pointer, so the flushing of data is moving the read = write
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path+"/../../../")
@@ -57,9 +58,10 @@ class InteractiveShell(consoleInterface):
         """
         # Open a pseudo-terminal
         if log is None:
-            self.log = logModule( "InteractiveShell" )
-        self.log.setLevel( logModule.INFO )
+            self.log = logModule(self.__class__.__name__)
+            self.log.setLevel( logModule.INFO )
         self.prompt = r"\$ "
+        self.sessionOpen = False
 
     def open(self):
         """
@@ -69,6 +71,7 @@ class InteractiveShell(consoleInterface):
         gProcess = self.process
         # Register the cleanup function to be called on exit
         atexit.register(InteractiveShellCleanUp)
+        self.sessionOpen = True
         result = self.read_until( self.prompt )
         return result
     
@@ -98,13 +101,16 @@ class InteractiveShell(consoleInterface):
                 break;
             except pexpect.TIMEOUT:
                 if attempt == max_attempts - 1:  # Last attempt
+                    self.process.before=""
                     return output  # Return an empty string if the message is not found after all attempts
                 else:
                     continue  # Continue to the next attempt
             except pexpect.EOF:
                 self.log.error("Reached EOF - process has ended")
+                self.process.before=""
                 return output 
 
+        self.process.before=""
         return output
 
     def read_all(self):
@@ -130,11 +136,13 @@ class InteractiveShell(consoleInterface):
                 else:
                     output += data  # No need to decode if it's already a string
                     self.log.debug(data)
+        self.process.before=""
         return output
 
     def close(self):
         """Closes the shell process."""
         self.process.close()  # Use pexpect's close method
+        self.sessionOpen = False
 
 if __name__ == '__main__':
     # Create the interactive shell instance

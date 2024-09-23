@@ -23,21 +23,30 @@
 import os
 import sys
 import subprocess
+import time
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path+"/../../../")
 
 from framework.core.testControl import testController
+from framework.core.outboundClient import outboundClientClass
+from framework.core.logModule import logModule
+from interactiveShell import InteractiveShell
 
-class utHelperClass(testController):
+#class utHelperClass(testController):
+class utHelperClass(): # Can be used for testing
     """
     Unit Test Helper Code
 
     This module provides basic common extensions for unit testing, interacting with devices,
     and managing files.
     """
-    def __init__(self, testName, qcId, log:logModule=None ):
-        super().__init__(testName, qcId, log=log )
+    def __init__(self, testName:str, qcId:str, log:logModule=None ):
+        #super().__init__(testName, qcId, log=log )
+        self.log=log
+        if log is None:
+            self.log = logModule(self.__class__.__name__)
+            self.log.setLevel( self.log.INFO )
 
     def waitForBoot(self):
         """
@@ -72,65 +81,12 @@ class utHelperClass(testController):
 
         if commandLine:
             self.session.read_all()  # Read any pending data from the session
-            self.writeMessageToSession("reboot")  # Send the "reboot" command
+            self.session.write("reboot")  # Send the "reboot" command
             result = True
         else:
             result = self.powerControl.reboot()  # Use the power control interface to reboot
 
         return result
-
-    def waitForSessionMessage(self, message, device="dut"):
-        """
-        Waits for a specific message to appear in the device's console session.
-
-        This function reads from the console session of the specified device until the given message is found.
-        It raises an exception if the message is not found within the session's timeout.
-
-        Args:
-            message (str): The message to wait for.
-            device (str, optional): The device to monitor (default: "dut").
-
-        Raises:
-            Exception: If the message is not found in the session.
-
-        Returns:
-            str: The session output up to and including the found message.
-        """
-        self.log.debug("waitForSessionMessage([{}])".format(message).format(dut))
-
-        activeDevice = self.devices.getDevice(device)
-        session = activeDevice.getConsoleSession()
-
-        try:
-            # Read from the session until the message is found
-            string = session.read_until(message)
-
-            # Check if the message was actually found
-            findStringLocation = string.find(message)
-            if findStringLocation == -1:
-                self.log.error("Could not find string: {}, raise an exception".format(message))
-                raise Exception("Raise an exception")  # Raise a generic exception
-                return False  # This line is unreachable due to the exception
-
-        except Exception as e:
-            self.log.error(e)
-            raise Exception('waitForSessionMessage session message - {} failed'.format(message))
-
-        return string
-
-    def writeMessageToDeviceSession(self, message, device="dut"):
-        """
-        Writes a message to the console session of the specified device.
-
-        Args:
-            message (str): The message to write.
-            device (str, optional): The device to write the message to (default: "dut").
-        """
-        self.log.step("testControl.writeMessageToSession({})".format(message.strip()))
-
-        activeDevice = self.devices.getDevice(device)
-        session = activeDevice.getConsoleSession()
-        session.write(message)
 
     ## Device file operations
 
@@ -148,20 +104,7 @@ class utHelperClass(testController):
         session.write("mkdir " + dirPath)  # Send the 'mkdir' command to create the directory
         session.write("\n")  # Send a newline to execute the command
 
-    def mountFolderOnDevice(self, devPath, mntPath, device="dut"):
-        """
-        Mounts a device path (e.g., a USB drive) to a mount point on the target device.
-
-        Args:
-            devPath (str): The device path to mount (e.g., /dev/sda1).
-            mntPath (str): The mount point on the target device.
-            device (str, optional): The device on which to mount the folder (default: "dut").
-        """
-        self.log.stepMessage("Mount USB " + devPath + " to " + mntPath + " path")
-        self.writeMessageToDeviceSession("mount " + devPath + " " + mntPath, device=device)  # Send the 'mount' command
-        self.writeMessageToDeviceSession("\n", device=device)  # Send a newline
-
-    def copyFolderOnDevice(self, sourcePath, destinationPath, device="dut"):
+    def copyFolder(self, sourcePath, destinationPath, session=None):
         """
         Copies a folder from one location to another on the target device.
 
@@ -170,10 +113,12 @@ class utHelperClass(testController):
             destinationPath (str): The destination directory path.
             device (str, optional): The device on which to copy the folder (default: "dut").
         """
-        self.writeMessageToDeviceSession("cp -r " + sourcePath + " " + destinationPath, device=device)  # Send the 'cp -r' command
-        self.writeMessageToDeviceSession("\n", device=device)  # Send a newline
+        if session is None:
+            session = self.session
+        session.write("cp -r " + sourcePath + " " + destinationPath)  # Send the 'cp -r' command
+        session.write("\n")  # Send a newline
 
-    def changeFolderPermissionOnDevice(self, permission, path, device="dut"):
+    def changeFolderPermission(self, permission, path, session=None):
         """
         Changes the permissions of a folder, file, or path on the target device.
 
@@ -182,10 +127,12 @@ class utHelperClass(testController):
             path (str): The path to the folder, file, or path.
             device (str, optional): The device on which to change permissions (default: "dut").
         """
-        self.writeMessageToDeviceSession("chmod " + permission + " " + path + "*", device=device)  # Send the 'chmod' command
-        self.writeMessageToDeviceSession("\n", device=device)  # Send a newline
+        if session is None:
+            session = self.session
+        session.write("chmod " + permission + " " + path + "*")  # Send the 'chmod' command
+        session.write("\n")  # Send a newline
 
-    def copyFileFromHost(self, sourcePath, destinationPath, device="dut"):
+    def copyFileFromHost(self, sourcePath, destinationPath, targetDevice="dut"):
         """
         Copies a file from the host machine to the target device using SCP (for SSH connections).
 
@@ -200,7 +147,7 @@ class utHelperClass(testController):
         Raises:
             ValueError: If the session type is not "ssh".
         """
-        activeDevice = self.devices.getDevice(device)
+        activeDevice = self.devices.getDevice(targetDevice)
 
         if activeDevice.session.type == "ssh":
             self.log.stepMessage("copyFile(" + sourcePath + ", (" + destinationPath + ")")
@@ -215,19 +162,17 @@ class utHelperClass(testController):
             # Execute the SCP command and capture the output
             result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             message = result.stdout.decode('utf-8').strip()
-
-        elif self.session.type == "serial":
+        else:
             # self.writeMessageToDeviceSession("cp " + source + " " + destination)  # Commented out code, potentially for serial copy
-            self.log.error("Can't copy for this session type: serial")
-            raise ValueError("Copying files is not supported for serial connections.")
+            self.log.error("Can't copy for this session type")
+            raise ValueError("Copying files is not supported for connections.")
 
         return message
 
-# Device / Host Command operations
-
-    def writeHostCommands(self, commands: list):
+# Session Command operations
+    def writeCommands(self, commands: str, session:object=None):
         """
-        Executes a command on the host machine (Linux only).
+        Executes a command on the session
 
         Args:
             command (list): The command list execute.
@@ -235,33 +180,34 @@ class utHelperClass(testController):
         Returns:
             str: The output/result of the command execution.
         """
-        self.log.debug("writeHostCommands()")
-        for cmd in commands:
-            result += self.syscmd(cmd)  # Execute the command using syscmd (assuming it's defined elsewhere)
+        self.log.debug("writeCommands()")
+        if session is None:
+            session = self.session
+
+        # Flush the buffer by reading it all
+        output = session.read_all()
+        self.log.debug( output )
+
+        # Split the data into lines
+        lines = commands.splitlines()
+
+        # Filter out empty lines and extract commands
+        strippedCommands = [line.strip() for line in lines if line.strip()]
+        result = ""
+        for cmd in strippedCommands:
+            cmd += "\n" # FIXME: This shouldn't be required session.write - should always include a newLine
+            session.write(cmd)
+            #TODO: Upgrade the session class to know it's prompt, then we should wait for prompt
+            #TODO: This function should move to the session class
+            output = session.read_all()
+            self.log.debug( output )
+            result += output
+            #result += self.syscmd(cmd)  # Execute the command using syscmd (assuming it's defined elsewhere)
         return result
 
-    def flushSessionData(self, timeout=1, device="dut"):
+    def writeCommandsOnPrompt(self, commands:list, prompt:str=None, session:object=None):
         """
-        Clears any pending data from the session buffer of the specified device.
-
-        Args:
-            timeout (int, optional): The timeout in seconds to wait before reading (default: 1).
-            device (str, optional): The device to flush the session data for (default: "dut").
-
-        Returns:
-            str: The accumulated data that was read from the session buffer.
-        """
-        self.log.debug("clearCommand()")
-        self.waitSeconds(timeout)  # Wait for a short time to allow data to accumulate
-
-        activeDevice = self.devices.getDevice(device)
-        session = activeDevice.getConsoleSession()
-        result = session.read_all()  # Read all available data from the session
-        return result
-
-    def writeCommandsOnDevice(self, commands:list, prompt:str=None, device:str="dut"):
-        """
-        Writes a command to the session on the target device and waits for a response.
+        Writes a command to the session amnd waits for prompt between commands.
 
         Args:
             commands (list): The command list to execute.
@@ -273,23 +219,37 @@ class utHelperClass(testController):
             str: The output/response from the command execution, excluding the command itself and the prompt.
                     If no response is received, an empty string is returned.
         """
-        self.log.debug("writeCommand(%s)".format(commands))
+        self.log.debug("writeCommandsOnPrompt(%s)".format(commands))
+
+        if session is None:
+            session = self.session
+
+        # Flush the buffer by reading it all
+        output = session.read_all()
+        self.log.debug( output )
+
+        # Split the data into lines
+        lines = commands.splitlines()
+
+        # Filter out empty lines and extract commands
+        strippedCommands = [line.strip() for line in lines if line.strip()]
+        result = ""
 
         # Loop round by the list of commands
-        for cmd in commands:
+        for cmd in strippedCommands:
             # Send the command and a newline to the device session
-            self.writeMessageToDeviceSession(cmd, device=device)
-            self.writeMessageToDeviceSession("\n", device=device)
+            cmd += "\n"
+            session.write(cmd)
 
             # If no prompt is not provided, use the default prompt from the device configuration
             if prompt is None:
                 prompt = self.getCPEFieldValue("prompt")
 
             # Wait for the expected prompt or timeout
-            result = self.waitForSessionMessage(prompt, device=device)
+            result = self.session.read_until(prompt)
 
             # Flush any additional data from the session
-            result += self.flushSessionData(device=device)
+            result += self.session.read_all()
 
             # Split the result into lines
             message = result.split("\r\n")
@@ -328,8 +288,7 @@ class utHelperClass(testController):
         return False
 
     ## Useful log cat / save functions for the device
-
-    def catFileOnDevice(self, filePath, device="dut"):
+    def catFile(self, filePath, prompt=None, session=None):
         """
         Reads and retrieves the contents of a file on the device using the 'cat' command.
 
@@ -343,15 +302,18 @@ class utHelperClass(testController):
         """
         self.log.step("catFileOnDevice('{}')".format(filePath))
 
+        localSession = self.session
+        if session is not None:
+            localSession = session
         # Check if the session is open
-        if not self.session.sessionOpen:
-            self.step.log("catFileOnDevice(): session not open")
+        if not localSession.sessionOpen:
+            self.step.error("catFile(): session not open")
             return False
 
-        self.log.info("cat:[filePath]")
+        self.log.debug("cat:[{}]".format(filePath))
 
         # Execute the 'cat' command to read the file and return the output
-        log = self.writeCommand("cat " + filePath)
+        log = self.writeCommandsOnPrompt("cat " + filePath, prompt=prompt, session=localSession)
 
         return log
 
@@ -383,24 +345,51 @@ class utHelperClass(testController):
             target_directory (str): target directory on device.
             device (str) : device name ( default: "dut" )
         """
-        self.log.step("url( url:'{}' )".format(url))
-        self.log.step("target_directory( target_directory:'{}' )".format(target_directory))
+        self.log.debug("urls( url:'{}' )".format(urls))
+        self.log.debug("target_directory( target_directory:'{}' )".format(target_directory))
 
         for url in urls:
-            # Download a file into the worksapce on the host
+            # Download a file into the workspace on the host
             # Then copy the file to target
             file_name = os.path.basename(url)
-            self.outboundClient.downloadFile(url)
-            workspace_directory = self.outboundClient.workspaceDirectory
-            self.copyFileFromHost(os.path.join(workspace_directory, file_name), target_directory, device=device)
+            if hasattr(self, 'outboundClient'):
+                self.outboundClient.downloadFile(url)
+                workspace_directory = self.outboundClient.workspaceDirectory
+                self.copyFileFromHost(os.path.join(workspace_directory, file_name), target_directory, device=device)
+            else:
+                self.log.error("outboundClient not present")
 
 # Test and example usage code
 if __name__ == '__main__':
-    # test the class
-    test = utHelperClass("functionTest",1)
-    test.writeCommandsOnDevice()
-    test.writeHostCommands()
 
-# Tests Required
-# - writeHostCommands
-# - writeCommandsOnDevice
+    #TODO: This tests should be expanded as each class is extended or touched
+    #TODO: Coverage of all tests is required
+    # Test assumes that it's ran with --config <localbox>
+    test = utHelperClass("functionTest",1)
+    commands="""
+        echo helloworld
+        ls ~/.bashrc
+    """
+    shell=InteractiveShell()
+    shell.open()
+    test.session = shell    # Override the default shell
+
+    print("-----------------writeCommands-------------")
+    result = test.writeCommands(commands, session=shell)
+    print("-----------------writeCommands:result-------------")
+    print(result)
+    print("-----------------writeCommandsOnPrompt-------------")
+    result = test.writeCommandsOnPrompt(commands, prompt=shell.prompt, session=shell)
+    print("-----------------writeCommandsOnPrompt:result-------------")
+    print(result)
+    print("-----------------catFile-------------")
+    result = test.catFile("~/.bashrc", prompt=shell.prompt )
+    print("-----------------catFile: Result-------------")
+    print(result)
+
+    # Assuming testing 
+    #if hasattr( test, "outboundClient" ) == False:
+        #test.outboundClient = outboundClientClass( workspaceDirectory="~/Downloads/OBC" )
+    #test.downloadToDevice("utHelper.py","/tmp/")
+
+    shell.close()

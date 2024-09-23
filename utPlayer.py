@@ -44,6 +44,9 @@ class utPlayer():
             log (class, optional): Parent log class. Defaults to None.
         """
         self.log = log
+        if log is None:
+            self.log = logModule(self.__class__.__name__)
+            self.log.setLevel( self.log.INFO )
         self.session = session
         self.playbackTool = "gstreamer" # Assume gstreamer
         # Any pre-launch requirements will be met by another class.
