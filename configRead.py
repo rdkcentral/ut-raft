@@ -77,7 +77,10 @@ class ConfigRead:
             activate_data = yaml_data 
 
             if start_key:
+                start_key = start_key.rstrip(":")   # Ensure there's no : in the key
                 activate_data = yaml_data.get(start_key, {})
+                if not activate_data:
+                    raise ValueError(f"start_key [{start_key}] must be present in the data")
 
             # Recursively set attributes
             self._set_attributes(activate_data)
@@ -103,6 +106,7 @@ class ConfigRead:
         Raises:
             ValueError: If `input_var` is neither a valid file path, a YAML string, nor a dictionary.
         """
+        #print("CWD:[{}]".format(os.getcwd()))
         if isinstance(input_var, str) and os.path.isfile(input_var):
             with open(input_var, 'r') as file:
                 return yaml.safe_load(file)
@@ -134,11 +138,15 @@ class ConfigRead:
                     setattr(self, key, nested_obj)
                 elif isinstance(value, list):
                     # Handle lists
+                    if isinstance(key, int):  # Handle index in our list and prefix with _ e.g. _0.
+                        key = '_'+str(key)
                     setattr(self, key, [
                         self._set_attributes(item) if isinstance(item, dict) else item
                         for item in value
                     ])
                 else:
+                    if isinstance(key, int):  # Handle index in our list and prefix with _ e.g. _0.
+                        key = '_'+str(key)
                     # Handle simple values
                     setattr(self, key, value)
         elif isinstance(data, list):
@@ -231,6 +239,9 @@ if __name__ == '__main__':
     print(data.application.name)  # Expected: MyApp
     print(data.application.languages)  # Expected: ['Python', 'JavaScript']
     print(data.application.languages[1])  # Expected: ['JavaScript']
+
+    # index method still works if required
+    #print(data.field.get(["config"]["database"]["port"]))
 
     database = data.database
 

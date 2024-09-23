@@ -5,7 +5,7 @@ tvsettings:  # Prefix must always exist
   description: "TV Settings testing profile / menu system for UT"
   test:
   control:
-    bin: "/home/FKC01/rdk-halif-power_manager/ut/bin/hal_test" # Binary to copy all files from it built.
+    bin: "ut/bin/hal_test" # Binary to copy all files from it built.
     opkg: "tvSettings.opkg" # package file if you where to install this from artifactory (version from the tag)
     menu:
       type: UT-C # C (UT-C Cunit) / C++ (UT-G (g++ ut-core gtest backend))

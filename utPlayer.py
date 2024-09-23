@@ -70,13 +70,18 @@ class utPlayer():
         Stops the playback of a stream
 
         Args:
-            None.
+            None
         """
         if (self.playbackTool == "gstreamer"):
             self.session.write("q")
     
 # Test and example usage code
 if __name__ == '__main__':
+
+    # utPlayerClass()
+      # gStreamPlayerClass()
+      # QTPlayerClass()
+      # FFPMEGPlayerClass()
 
     # Assumes that the asset is already transfer to /tmp
     # test the class
