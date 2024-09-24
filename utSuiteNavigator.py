@@ -34,7 +34,7 @@ sys.path.append(dir_path+"/../../../")
 from framework.core.logModule import logModule
 from framework.core.commandModules.consoleInterface import consoleInterface
 from interactiveShell import InteractiveShell
-from configRead import ConfigRead
+from framework.plugins.ut_raft.configRead import ConfigRead
 
 class utCFramework:
     """This module supports the selection of C Type tests
@@ -53,7 +53,7 @@ class utCFramework:
             self.log = logModule(self.__class__.__name__)
             self.log.setLevel( self.log.INFO )
         self.commandPrompt = r"command: "  # CUnit Prompt
-        self.selectPrompt = r"\) : "
+        self.selectPrompt = r") : "
 
     def start(self, command:str ):
         """start the suite
@@ -81,7 +81,7 @@ class utCFramework:
         self.log.debug(result)
         return result
 
-    def select(self, suite_name: str, test_name:str = None, input: list = None ):
+    def select(self, suite_name: str, test_name:str = None, promptWithAnswers: list = None ):
         """select a test from the suite to execute
 
         Args:
@@ -138,7 +138,11 @@ class utCFramework:
             self.log.info(f"Found test: [{test_name}] @ [{test_index}]")
             # Run the specific test
             self.session.write(str(test_index))
-            output = self.session.read_until(self.commandPrompt)
+            # If Input is present we need to then wait on them
+            if promptWithAnswers is not None:
+                output = self.inputPrompts( promptWithAnswers )
+
+            output += self.session.read_until(self.commandPrompt)
             self.log.debug(output)
         return output
     
@@ -155,7 +159,7 @@ class utCFramework:
         """
 
         output=""
-        for prompt, input in promptsWithAnswers:
+        for prompt, input in promptsWithAnswers.items():
             output += self.session.read_until(prompt)
             self.session.write(input)
         return output
@@ -277,20 +281,17 @@ class UTSuiteNavigatorClass:
         for suite_number, suite_data in suite_list.items():
             if suite_name in suite_data["name"]:
                 # Find the test in the suite 
-                test_section = suite_data.get(test_id)
+                test_section = suite_data.get("test")
                 if test_section:
-                    if not isinstance( test_section, dict ):
-                        self.log.error("Suite:[{}] Test:[{}] Invalid Format".format(suite_name, test_id))
+                    if test_id in test_section:
+                        test_name = test_id
+                    else:
                         return None
-                    test_name = test_section.get("name")
         if not test_name:
             self.log.error("Suite:[{}] Test:[{}] Not Found".format(suite_name, test_id))
             return None
-        result = self.framework.select( suite_name, test_name, input )
-        # If Input is present we need to then wait on them
-        if promptWithAnswers is None:
-            return result
-        result += self.framework.inputPrompts( promptWithAnswers )
+        result = self.framework.select( suite_name, test_name, promptWithAnswers )
+
         return result
 
     def start(self):
@@ -392,4 +393,3 @@ if __name__ == '__main__':
     # test launch_test
     # select is working
     shell.close()
-    

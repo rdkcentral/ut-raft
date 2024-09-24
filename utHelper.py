@@ -42,7 +42,7 @@ class utHelperClass(testController):
     and managing files.
     """
     def __init__(self, testName:str, qcId:str, log:logModule=None ):
-        #super().__init__(testName, qcId, log=log )
+        super().__init__(testName, qcId, log=log )
         self.log=log
         if log is None:
             self.log = logModule(self.__class__.__name__)

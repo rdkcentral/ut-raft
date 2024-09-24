@@ -66,7 +66,7 @@ class utPlayer():
         # Example usage for gst-play `gst-play-1.0 <file_path>`
         if (self.playbackTool == "gstreamer"):
             cmd = "gst-play-1.0" + " " + streamFile
-            self.session.write(cmd+'\n')
+            self.session.write(cmd)
 
     def stop(self):
         """

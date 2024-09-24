@@ -58,7 +58,7 @@ class utUserResponse():
         """
 
         if self.log is not None:
-            self.log(query)
+            self.log.debug(query)
         response = input(query)
 
         if response == 'y' or response == 'Y' :
