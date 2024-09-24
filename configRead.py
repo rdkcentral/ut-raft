@@ -173,21 +173,25 @@ class ConfigRead:
             self._data = []  # Initialize the list if it doesn't exist
         self._data.append(value)
 
-    def __getitem__(self, index):
+    def get_field_value(self, field_path):
         """
-        Retrieves an item from the internal list using indexing.
-
-        This method provides the ability to access elements within the object 
-        as if it were a standard Python list, using square bracket notation. 
-        For example, `obj[0]` would return the first item in the list.
+        Retrieves the value associated with a specified field path within the YAML data.
 
         Args:
-            index: The index of the item to retrieve.
+            field_path (str): A dot-separated path to the desired field (e.g., "section.subsection.key").
 
         Returns:
-            The value at the specified index in the internal list.
+            The value associated with the specified field path, or None if the path is invalid.
         """
-        return self._data[index]
+        current_level = self.fields
+        for part in field_path.split('.'):
+            if isinstance(current_level, dict) and part in current_level:
+                current_level = current_level[part]
+            elif isinstance(current_level, list) and part.isdigit() and 0 <= int(part) < len(current_level):
+                current_level = current_level[int(part)]
+            else:
+                return None  # Invalid field path
+        return current_level
 
 # Test and example usage code
 if __name__ == '__main__':
@@ -252,6 +256,18 @@ if __name__ == '__main__':
     data = ConfigRead(input_data)
     print(data.config.database.host)  # Expected: localhost
     print(data.config.database.port)  # Expected: 5432
+
+    # Example 1: Accessing a simple value
+    value = data.get_field_value("config.application.name")
+    print(value)  # Output: MyApp
+
+    # Example 2: Accessing a nested value
+    value = data.get_field_value("config.application.languages.0")
+    print(value)  # Output: Python
+
+    # Example 3: Handling invalid field paths
+    value = data.get_field_value("config.nonexistent.field")
+    print(value)  # Output: None
 
     IAudioDecoderManager = ConfigRead(profile_check, "IAudioDecoderManager")
     print( IAudioDecoderManager )   # TODO: Doesn't currently list objects, unclear if it should
