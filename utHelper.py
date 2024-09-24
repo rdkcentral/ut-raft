@@ -147,17 +147,19 @@ class utHelperClass(testController):
         Raises:
             ValueError: If the session type is not "ssh".
         """
+        #TODO: Upgrade to support this via the outbound client
         activeDevice = self.devices.getDevice(targetDevice)
 
         if activeDevice.session.type == "ssh":
             self.log.stepMessage("copyFile(" + sourcePath + ", (" + destinationPath + ")")
 
             # TODO: Assumption: 'root' user is the default on the target, this should be specified by the configuration
-            destination = "root@{}:{}".format(self.slotInfo.getDeviceAddress(), destinationPath)
+            username = activeDevice.session.username
+            destination = "{}}@{}:{}".format(username, self.slotInfo.getDeviceAddress(), destinationPath)
 
+            port = activeDevice.session.port
             # Construct the SCP command with options to disable strict host key checking and known_hosts file
-            command = ["scp", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null",
-                    sourcePath, destination]
+            command = ["scp", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-p", port, sourcePath, destination]
 
             # Execute the SCP command and capture the output
             result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -195,7 +197,6 @@ class utHelperClass(testController):
         strippedCommands = [line.strip() for line in lines if line.strip()]
         result = ""
         for cmd in strippedCommands:
-            cmd += "\n" # FIXME: This shouldn't be required session.write - should always include a newLine
             session.write(cmd)
             #TODO: Upgrade the session class to know it's prompt, then we should wait for prompt
             #TODO: This function should move to the session class

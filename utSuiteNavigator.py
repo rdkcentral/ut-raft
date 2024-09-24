@@ -64,10 +64,7 @@ class utCFramework:
         Returns:
             str: prompt result
         """
-        self.session.write(command)
-        #time.sleep(1)
-        #result = self.session.read_all()
-        
+        self.session.write(command)       
         result = self.session.read_until( self.commandPrompt )
         self.log.debug(result)
         return result
@@ -106,7 +103,6 @@ class utCFramework:
         output = self.session.read_until(self.commandPrompt)
         self.log.debug(output)
         self.session.write("s")
-        #output = self.session.read_all()
         output = self.session.read_until(self.selectPrompt)
         self.log.debug(output)
         
@@ -144,6 +140,24 @@ class utCFramework:
             self.session.write(str(test_index))
             output = self.session.read_until(self.commandPrompt)
             self.log.debug(output)
+        return output
+    
+    def inputPrompts(self, promptsWithAnswers: dict):
+        """
+        Waits for specific prompts and sends corresponding input values.
+
+        @param[in] inputPrompts  A list of prompt strings to wait for.
+        @param[in] inputValues   A list of input values to send when corresponding prompts are encountered.
+
+        @pre The `inputPrompts` and `inputValues` lists must have the same number of elements.
+        @post For each prompt in `inputPrompts`, the function will wait until the prompt is encountered,
+            then send the corresponding value from `inputValues`.
+        """
+
+        output=""
+        for prompt, input in promptsWithAnswers:
+            output += self.session.read_until(prompt)
+            self.session.write(input)
         return output
     
     def find_index_in_output(self, output, target_name):
@@ -237,7 +251,7 @@ class UTSuiteNavigatorClass:
         else:
             self.log.error("Invalid Menu Type Configuration :{}".format(test_type))
   
-    def select(self, suite_name: str, test_id:str = None, input: list = None ):
+    def select(self, suite_name: str, test_id:str = None, promptWithAnswers:dict = None ):
         """Select a menu from an already running system
 
         Args:
@@ -273,6 +287,10 @@ class UTSuiteNavigatorClass:
             self.log.error("Suite:[{}] Test:[{}] Not Found".format(suite_name, test_id))
             return None
         result = self.framework.select( suite_name, test_name, input )
+        # If Input is present we need to then wait on them
+        if promptWithAnswers is None:
+            return result
+        result += self.framework.inputPrompts( promptWithAnswers )
         return result
 
     def start(self):
@@ -306,7 +324,7 @@ if __name__ == '__main__':
     dsAudio:  # Prefix must always exist
         description: "dsAudio Device Settings testing profile / menu system for UT"
         test:
-            execute: "~/Downloads/dsAudio/run.sh -p ~/Downloads/dsAudio/Sink_AudioSettings.yaml"
+            execute: "../bin/run.sh -p ../profiles/source/Source_AudioSettings.yaml"
             type: UT-C # C (UT-C Cunit) / C++ (UT-G (g++ ut-core gtest backend))
             suites:
                 0:
@@ -315,61 +333,31 @@ if __name__ == '__main__':
                     name: "L2 dsAudio - Sink"
                 2: 
                     name: "L3 dsAudio - Sink"
-                    test_initialise_audio:
-                        name: "Initialize dsAudio"
-                    test_enable_audio_port: 
-                        name: "Enable Audio Port"
-                        input:
-                            - "Select dsAudio Port:"
-                    test_enable_disable_audio:
-                        name: "Disable Audio Port"
-                    test_enable_headphone_connection:
-                        name: "Headphone Connection"
-                    test_audio_compression:
-                        name: "Audio Compression"
-                    test_ms12_dap_features:
-                        name: "MS12 DAP Features"
-                    test_set_stereo_mode:
-                        name: "Set Stereo Mode"
-                    test_enable_disable_stero_auto:
-                        name: "Enable/Disable Stereo Auto"
-                    test_set_audio_level:
-                        name: "Set Audio Level"
-                    test_set_audio_gain_for_speaker:
-                        name: "Set Audio Gain For Speaker"
-                    test_audio_mute_unmute:
-                        name: "Audio Mute/UnMute"
-                    test_set_audio_delay:
-                        name: "Set Audio Delay"
-                    test_get_audio_format:
-                        name: "Get Audio Format"
-                    test_set_atmos_output_mode:
-                        name: "Set ATMOS Output Mode"
-                        input:
-                            - "Enable/Disable ATMOS Mode[1:Enable, 2:Disable]:"
-                    test_get_atmos_capabilties:
-                        name: "Get ATMOS Capabilities"
-                    test_set_ms12_profiles:
-                        name: "Set MS12 Profiles"
-                    test_set_associate_audio_mixing:
-                        name: "Set Associate Audio Mixing"
-                        input:
-                            - "Enable/Disable Associated Audio Mixing[1:Enable, 2:Disable]:"
-                            - "Set Fader Control[-32(mute associated audio) to 32(mute main audio)]:"
-                    test_set_audio_mixer_level:
-                        name: "Set Audio Mixer Levels"
-                        intput:
-                            - "Select Mixer Input: "
-                            - "Set the Volume[0 to 100]: "
-                    test_primary_secondary_language:
-                        name: "Primary/Secondary Language"
-                    test_get_arc_type:
-                        name: "Get ARC Type"
-                    test_set_sad_list:
-                        name: "Set SAD List"
-                    test_terminate_audio:
-                        name: "Terminate dsAudio"
+                    test:
+                        - Initialize dsAudio"
+                        - "Enable Audio Port"
+                        - "Disable Audio Port"
+                        - "Headphone Connection"
+                        - "Audio Compression"
+                        - "MS12 DAP Features"
+                        - "Set Stereo Mode"
+                        - "Enable/Disable Stereo Auto"
+                        - "Set Audio Level"
+                        - "Set Audio Gain For Speaker"
+                        - "Audio Mute/UnMute"
+                        - "Set Audio Delay"
+                        - "Get Audio Format"
+                        - "Set ATMOS Output Mode"
+                        - "Get ATMOS Capabilities"
+                        - "Set MS12 Profiles"
+                        - "Set Associate Audio Mixing"
+                        - "Set Audio Mixer Levels"
+                        - "Primary/Secondary Language"
+                        - "Get ARC Type"
+                        - "Set SAD List"
+                        - "Terminate dsAudio"
     """
+
     # suite = "L3 dsAudio - Sink"
     # test the class
     shell = InteractiveShell()
@@ -384,6 +372,18 @@ if __name__ == '__main__':
     test.select( suite, "test_error_validation_case" ) # error case
     result = test.select( suite, "test_initialise_audio" ) # valid case
     result = test.select( suite, "test_terminate_audio" ) # valid case
+    promptWithAnswers = {
+        "Option1": {     # Group related prompts and answers under a descriptive key
+            "Select Mixer Input: ": "1", 
+            "Set the Volume[0 to 100]: ": "100"
+        },
+        "Option2": {     # Another group for clarity
+            "Select Mixer Input: ": "5", 
+            "Set the Volume[0 to 100]: ": "50"
+        }
+    }
+    result = test.select( suite, "Set Audio Mixer Level", promptWithAnswers["Option1"] ) # Has non matching inputs and should error
+    result = test.select( suite, "Set Audio Mixer Level", promptWithAnswers["Option2"] ) # Has non matching inputs and should error
     test.stop()
     
     #test.select( "Parent", "Child" )

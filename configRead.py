@@ -173,12 +173,12 @@ class ConfigRead:
             self._data = []  # Initialize the list if it doesn't exist
         self._data.append(value)
 
-    def get_field_value(self, field_path):
+    def get(self, field_path:dict|list):
         """
         Retrieves the value associated with a specified field path within the YAML data.
 
         Args:
-            field_path (str): A dot-separated path to the desired field (e.g., "section.subsection.key").
+            field_path (dict|list): A dot-separated path to the desired field (e.g., "section.subsection.key").
 
         Returns:
             The value associated with the specified field path, or None if the path is invalid.
@@ -258,15 +258,15 @@ if __name__ == '__main__':
     print(data.config.database.port)  # Expected: 5432
 
     # Example 1: Accessing a simple value
-    value = data.get_field_value("config.application.name")
+    value = data.get("config.application.name")
     print(value)  # Output: MyApp
 
     # Example 2: Accessing a nested value
-    value = data.get_field_value("config.application.languages.0")
+    value = data.get("config.application.languages.0")
     print(value)  # Output: Python
 
     # Example 3: Handling invalid field paths
-    value = data.get_field_value("config.nonexistent.field")
+    value = data.get("config.nonexistent.field")
     print(value)  # Output: None
 
     IAudioDecoderManager = ConfigRead(profile_check, "IAudioDecoderManager")
