@@ -67,12 +67,16 @@ class InteractiveShell(consoleInterface):
         """
         Starts the shell process (e.g., bash) using pexpect.
         """
-        self.process = pexpect.spawnu('/bin/bash -c "INTERACTIVE_SHELL=1;/bin/bash"')
+        current_cwd = os.getcwd()
+        self.process = pexpect.spawnu('/bin/bash', cwd=current_cwd)
+        atexit.register(InteractiveShellCleanUp)
         gProcess = self.process
         # Register the cleanup function to be called on exit
-        atexit.register(InteractiveShellCleanUp)
         self.sessionOpen = True
+        # Always start the session in the cwd
         result = self.read_until( self.prompt )
+        self.write( "cd {}".format(current_cwd) )
+        self.read_all()
         return result
     
     def write(self, command):

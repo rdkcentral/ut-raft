@@ -155,7 +155,7 @@ class utHelperClass(testController):
 
             # TODO: Assumption: 'root' user is the default on the target, this should be specified by the configuration
             username = activeDevice.session.username
-            destination = "{}}@{}:{}".format(username, self.slotInfo.getDeviceAddress(), destinationPath)
+            destination = "{}@{}:{}".format(username, self.slotInfo.getDeviceAddress(), destinationPath)
 
             port = activeDevice.session.port
             # Construct the SCP command with options to disable strict host key checking and known_hosts file

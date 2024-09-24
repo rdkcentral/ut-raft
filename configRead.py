@@ -109,9 +109,15 @@ class ConfigRead:
         #print("CWD:[{}]".format(os.getcwd()))
         if isinstance(input_var, str) and os.path.isfile(input_var):
             with open(input_var, 'r') as file:
-                return yaml.safe_load(file)
+                data = yaml.safe_load(file)
+                if data is None:
+                    self.log.error("Invalid Input File: [{}]".format(input_var))
+                return data
         elif isinstance(input_var, str):
-                return yaml.safe_load(input_var)
+                data = yaml.safe_load(input_var)
+                if data is None:
+                    self.log.error("Invalid Input File: [{}]".format(input_var))
+                return data
         raise ValueError("Input must be a valid file path or a dictionary")
 
     def _set_attributes(self, data):

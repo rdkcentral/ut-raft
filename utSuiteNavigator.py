@@ -30,11 +30,12 @@ import time
 # Helper always exist in the same directory under raft
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path+"/../../../")
+sys.path.append(dir_path)
 
 from framework.core.logModule import logModule
 from framework.core.commandModules.consoleInterface import consoleInterface
 from interactiveShell import InteractiveShell
-from framework.plugins.ut_raft.configRead import ConfigRead
+from configRead import ConfigRead
 
 class utCFramework:
     """This module supports the selection of C Type tests
@@ -51,9 +52,9 @@ class utCFramework:
         self.log=log
         if log is None:
             self.log = logModule(self.__class__.__name__)
-            self.log.setLevel( self.log.INFO )
+            self.log.setLevel( self.log.DEBUG )
         self.commandPrompt = r"command: "  # CUnit Prompt
-        self.selectPrompt = r") : "
+        self.selectPrompt = r"\) : "
 
     def start(self, command:str ):
         """start the suite
@@ -64,9 +65,12 @@ class utCFramework:
         Returns:
             str: prompt result
         """
-        self.session.write(command)       
+        self.session.write(command)
+        #result = self.session.read_all()
         result = self.session.read_until( self.commandPrompt )
-        self.log.debug(result)
+        #self.log.debug("start[{}]".format(result))
+        if result == "":
+            self.log.error("Failed to start[{}]".format(command))
         return result
 
     def stop(self):
@@ -81,13 +85,13 @@ class utCFramework:
         self.log.debug(result)
         return result
 
-    def select(self, suite_name: str, test_name:str = None, promptWithAnswers: list = None ):
-        """select a test from the suite to execute
+    def select(self, suite_name: str, test_name:str = None, input: bool = False ):
+        """select a test from the suite to execute and wait for Prompt
 
         Args:
             suite_name (str): suite to select
             test_name (str, optional): test_name within the suite to select. Defaults to None, whole suite will be ran
-            input (list, optional): input list. Defaults to None.
+            input (bool, optional): if set to true then don't wait on last prompt
 
         Raises:
             ValueError: Suite {suite_name} not found the suite configuration
@@ -98,7 +102,7 @@ class utCFramework:
         """
 
         # Ensure we're at the top menu
-        self.session.write("\n")
+        self.session.write("x")
         self.session.write("u")
         output = self.session.read_until(self.commandPrompt)
         self.log.debug(output)
@@ -109,9 +113,8 @@ class utCFramework:
         # Extract test suite index from the output
         suite_index = self.find_index_in_output(output, suite_name)
         if suite_index is None:
-            self.log.error(f"Suite [{suite_name}] not found in menu configuration.")
-            print(output)
-            raise ValueError(f"Suite ['{suite_name}] not found in the menu configuration.")
+            self.log.error(f"Suite [{suite_name}] not found in configuration.")
+            return None
         
         self.log.info(f"Found Suite: [{suite_name}]")
         self.session.write(str(suite_index))
@@ -137,31 +140,29 @@ class utCFramework:
             
             self.log.info(f"Found test: [{test_name}] @ [{test_index}]")
             # Run the specific test
-            self.session.write(str(test_index))
             # If Input is present we need to then wait on them
-            if promptWithAnswers is not None:
-                output = self.inputPrompts( promptWithAnswers )
-
-            output += self.session.read_until(self.commandPrompt)
+            self.session.write(str(test_index))
+            if input is False:
+                # Wait for the command prompt if there's no other input required
+                output += self.session.read_until(self.commandPrompt)
             self.log.debug(output)
         return output
     
     def inputPrompts(self, promptsWithAnswers: dict):
         """
-        Waits for specific prompts and sends corresponding input values.
+        Sends the ecific prompts and sends corresponding input values.
 
-        @param[in] inputPrompts  A list of prompt strings to wait for.
-        @param[in] inputValues   A list of input values to send when corresponding prompts are encountered.
-
-        @pre The `inputPrompts` and `inputValues` lists must have the same number of elements.
-        @post For each prompt in `inputPrompts`, the function will wait until the prompt is encountered,
-            then send the corresponding value from `inputValues`.
+        Args:
+            promptsWithAnswers  A list of prompt strings to wait for.
         """
 
         output=""
         for prompt, input in promptsWithAnswers.items():
-            output += self.session.read_until(prompt)
+            #output += self.session.read_until(prompt)
+            output += self.session.read_all()
             self.session.write(input)
+        # Finish by waiting for the command prompt
+        output += self.session.read_until( self.commandPrompt )
         return output
     
     def find_index_in_output(self, output, target_name):
@@ -236,6 +237,27 @@ class UTSuiteNavigatorClass:
         """
         Initializes the UTCoreMenuNavigator object with a menu configuration file and an optional test profile.
 
+        Example Format:
+
+        ```yaml
+        module:  # Prefix must always exist
+            description: "dsAudio Device Settings testing profile for UT"
+            test:
+                execute: "../bin/run.sh -p ../profiles/module_profile.yaml"
+                type: UT-C # C (UT-C Cunit) / C++ (UT-G (g++ ut-core gtest backend))
+                suites:
+                    0:
+                        name: "L1 Suite"
+                    1: 
+                        name: "L2 Suite"
+                    2: 
+                        name: "L3 Suite"
+                        tests:
+                            - "Test 1"
+                            - "Test 2"
+                            - "Test 3"
+        ```
+
         Args:
             config (str): The file path to the menu configuration YAML file or a string
             startKey (str): Optional Index string into the config
@@ -255,7 +277,7 @@ class UTSuiteNavigatorClass:
         else:
             self.log.error("Invalid Menu Type Configuration :{}".format(test_type))
   
-    def select(self, suite_name: str, test_id:str = None, promptWithAnswers:dict = None ):
+    def select(self, suite_name: str, test_name:str = None, promptWithAnswers:dict = None ):
         """Select a menu from an already running system
 
         Args:
@@ -277,28 +299,35 @@ class UTSuiteNavigatorClass:
             self.log.error("Invalid Format [suites:] section not found")
             return None
         found = False
-        test_name = ""
-        for suite_number, suite_data in suite_list.items():
-            if suite_name in suite_data["name"]:
-                # Find the test in the suite 
-                test_section = suite_data.get("test")
-                if test_section:
-                    if test_id in test_section:
-                        test_name = test_id
-                    else:
-                        return None
-        if not test_name:
-            self.log.error("Suite:[{}] Test:[{}] Not Found".format(suite_name, test_id))
+        # Just validate that the test is in the expected list
+        for index in suite_list:
+            suite = suite_list.get(index)
+            if not suite:
+                self.log.error("Invalid Format [suites.<index>]")
+                return None
+            testsList = suite.get("tests")
+            if not testsList:
+                self.log.error("Invalid Format [suites.<index>.tests]")
+                return None
+            if test_name in testsList:
+                found = True
+                break
+        if not found:
+            self.log.error("Suite:[{}] Test:[{}] Not Found".format(suite_name, test_name))
             return None
-        result = self.framework.select( suite_name, test_name, promptWithAnswers )
-
+        # If Input is present we need to then wait on them
+        if promptWithAnswers is None:
+            result = self.framework.select( suite_name, test_name )
+            return result
+        result = self.framework.select( suite_name, test_name, input=True )
+        result += self.framework.inputPrompts( promptWithAnswers )
         return result
 
     def start(self):
         command = self.config.test.execute
         #TODO: Handle opkg download and install in the future
         result = self.framework.start(command)
-        self.log.debug( "result [{}]")
+        self.log.debug( "result [{}]".format(result))
 
     def stop(self):
         self.framework.stop()
@@ -323,19 +352,23 @@ class UTSuiteNavigatorClass:
 if __name__ == '__main__':
     suiteConfig="""
     dsAudio:  # Prefix must always exist
-        description: "dsAudio Device Settings testing profile / menu system for UT"
+        description: "dsAudio Device Settings testing profile for UT"
         test:
-            execute: "../bin/run.sh -p ../profiles/source/Source_AudioSettings.yaml"
+            execute: "cd bin;./run.sh -p ../profiles/sink/Sink_AudioSettings.yaml"
             type: UT-C # C (UT-C Cunit) / C++ (UT-G (g++ ut-core gtest backend))
             suites:
                 0:
                     name: "L1 dsAudio - Sink"
+                    tests:
+                        - None
                 1: 
                     name: "L2 dsAudio - Sink"
+                    tests:
+                        - None
                 2: 
                     name: "L3 dsAudio - Sink"
-                    test:
-                        - Initialize dsAudio"
+                    tests:
+                        - "Initialize dsAudio"
                         - "Enable Audio Port"
                         - "Disable Audio Port"
                         - "Headphone Connection"
@@ -359,32 +392,33 @@ if __name__ == '__main__':
                         - "Terminate dsAudio"
     """
 
-    # suite = "L3 dsAudio - Sink"
     # test the class
     shell = InteractiveShell()
     result = shell.open()
     print("Shell:[{}]".format(result))
 
     suite = "L3 dsAudio - Sink"
-    #test = UTSuiteNavigatorClass(suiteConfig, "dsAudio:", shell)
     # Enable to test file loading assuming that we have a Audio Settings profile for testing
+    #test = UTSuiteNavigatorClass(suiteConfig, "dsAudio:", shell)
     test = UTSuiteNavigatorClass("./host/tests/class/dsAudio_test_suite.yaml", "dsAudio:", shell)
     test.start()
     test.select( suite, "test_error_validation_case" ) # error case
-    result = test.select( suite, "test_initialise_audio" ) # valid case
-    result = test.select( suite, "test_terminate_audio" ) # valid case
+    result = test.select( suite, "Initialize dsAudio" ) # valid case
+    result = test.select( suite, "Terminate dsAudio" ) # valid case
     promptWithAnswers = {
         "Option1": {     # Group related prompts and answers under a descriptive key
             "Select Mixer Input: ": "1", 
             "Set the Volume[0 to 100]: ": "100"
         },
         "Option2": {     # Another group for clarity
-            "Select Mixer Input: ": "5", 
+            "Select Mixer Input: ": "0", 
             "Set the Volume[0 to 100]: ": "50"
         }
     }
-    result = test.select( suite, "Set Audio Mixer Level", promptWithAnswers["Option1"] ) # Has non matching inputs and should error
-    result = test.select( suite, "Set Audio Mixer Level", promptWithAnswers["Option2"] ) # Has non matching inputs and should error
+    result = test.select( suite, "Set Audio Mixer Levels", promptWithAnswers["Option1"] ) # Has non matching inputs and should error
+    print(result)
+    result = test.select( suite, "Set Audio Mixer Levels", promptWithAnswers["Option2"] ) # Has non matching inputs and should error
+    print(result)
     test.stop()
     
     #test.select( "Parent", "Child" )
