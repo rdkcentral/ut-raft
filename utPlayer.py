@@ -30,7 +30,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path+"/../../../")
 
 from framework.core.logModule import logModule
-from interactiveShell import InteractiveShell
+from framework.plugins.ut_raft.interactiveShell import InteractiveShell
 class utPlayer():
     """
     UT Player class
@@ -76,8 +76,8 @@ class utPlayer():
             None
         """
         if (self.playbackTool == "gstreamer"):
-            self.session.write("q")
-    
+            self.session.write("\x03")
+
 # Test and example usage code
 if __name__ == '__main__':
 

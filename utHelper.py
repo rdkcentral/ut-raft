@@ -31,7 +31,7 @@ sys.path.append(dir_path+"/../../../")
 from framework.core.testControl import testController
 from framework.core.outboundClient import outboundClientClass
 from framework.core.logModule import logModule
-from interactiveShell import InteractiveShell
+from framework.plugins.ut_raft.interactiveShell import InteractiveShell
 
 class utHelperClass(testController):
 #class utHelperClass(): # Can be used for testing
@@ -159,7 +159,7 @@ class utHelperClass(testController):
 
             port = activeDevice.session.port
             # Construct the SCP command with options to disable strict host key checking and known_hosts file
-            command = ["scp", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-p", port, sourcePath, destination]
+            command = ["scp", "-P", str(port), "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-o", "HostKeyAlgorithms=ssh-rsa,ssh-dss", sourcePath, destination]
 
             # Execute the SCP command and capture the output
             result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -356,7 +356,7 @@ class utHelperClass(testController):
             if hasattr(self, 'outboundClient'):
                 self.outboundClient.downloadFile(url)
                 workspace_directory = self.outboundClient.workspaceDirectory
-                self.copyFileFromHost(os.path.join(workspace_directory, file_name), target_directory, device=device)
+                self.copyFileFromHost(os.path.join(workspace_directory, file_name), target_directory, targetDevice=device)
             else:
                 self.log.error("outboundClient not present")
 

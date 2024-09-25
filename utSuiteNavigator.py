@@ -54,7 +54,7 @@ class utCFramework:
             self.log = logModule(self.__class__.__name__)
             self.log.setLevel( self.log.DEBUG )
         self.commandPrompt = r"command: "  # CUnit Prompt
-        self.selectPrompt = r"\) : "
+        self.selectPrompt = r") : "
 
     def start(self, command:str ):
         """start the suite
@@ -85,7 +85,7 @@ class utCFramework:
         self.log.debug(result)
         return result
 
-    def select(self, suite_name: str, test_name:str = None, input: bool = False ):
+    def select(self, suite_name: str, test_name:str = None, promptWithAnswers: list = None ):
         """select a test from the suite to execute and wait for Prompt
 
         Args:
@@ -109,18 +109,18 @@ class utCFramework:
         self.session.write("s")
         output = self.session.read_until(self.selectPrompt)
         self.log.debug(output)
-        
+
         # Extract test suite index from the output
         suite_index = self.find_index_in_output(output, suite_name)
         if suite_index is None:
             self.log.error(f"Suite [{suite_name}] not found in configuration.")
             return None
-        
+
         self.log.info(f"Found Suite: [{suite_name}]")
         self.session.write(str(suite_index))
         output = self.session.read_until(self.commandPrompt)
         self.log.debug(output)
-        
+
         if test_name is None:
             # Run the Suite of tests
             self.session.write("r")
@@ -131,23 +131,27 @@ class utCFramework:
             self.session.write("s")
             output = self.session.read_until(self.selectPrompt)
             self.log.debug(output)
-           
+
             # Extract test index from the output
             test_index = self.find_index_in_output(output, test_name)
             if test_index is None:
                 self.log.error(f"Test [{test_name}] not found in suite [{suite_name}].")
                 raise ValueError(f"Test [{test_name}] not found in the suite.")
-            
+
             self.log.info(f"Found test: [{test_name}] @ [{test_index}]")
             # Run the specific test
-            # If Input is present we need to then wait on them
             self.session.write(str(test_index))
-            if input is False:
-                # Wait for the command prompt if there's no other input required
-                output += self.session.read_until(self.commandPrompt)
+
+            # If Input is present we need to then wait on them
+            if promptWithAnswers is not None:
+                output = self.inputPrompts( promptWithAnswers )
+
+            # Wait for the command prompt if there's no other input required
+            output += self.session.read_until(self.commandPrompt)
+
             self.log.debug(output)
         return output
-    
+
     def inputPrompts(self, promptsWithAnswers: dict):
         """
         Sends the ecific prompts and sends corresponding input values.
@@ -158,13 +162,10 @@ class utCFramework:
 
         output=""
         for prompt, input in promptsWithAnswers.items():
-            #output += self.session.read_until(prompt)
-            output += self.session.read_all()
+            output += self.session.read_until(prompt)
             self.session.write(input)
-        # Finish by waiting for the command prompt
-        output += self.session.read_until( self.commandPrompt )
         return output
-    
+
     def find_index_in_output(self, output, target_name):
         """
         Finds the index of a target name in the shell output.
@@ -195,7 +196,7 @@ class utCFramework:
         Returns:
             bool: True if the test passed successfully, False if the test failed, or None if the output format is unexpected.
         """
-        
+
         # Pattern to detect the number of suites, tests, and asserts with their corresponding results
         # Run Summary:    Type  Total    Ran Passed Failed Inactive
         #       suites      2      0    n/a      0        0
@@ -248,9 +249,9 @@ class UTSuiteNavigatorClass:
                 suites:
                     0:
                         name: "L1 Suite"
-                    1: 
+                    1:
                         name: "L2 Suite"
-                    2: 
+                    2:
                         name: "L3 Suite"
                         tests:
                             - "Test 1"
@@ -276,7 +277,7 @@ class UTSuiteNavigatorClass:
             self.log.info("C Framework Selected")
         else:
             self.log.error("Invalid Menu Type Configuration :{}".format(test_type))
-  
+
     def select(self, suite_name: str, test_name:str = None, promptWithAnswers:dict = None ):
         """Select a menu from an already running system
 
@@ -307,20 +308,16 @@ class UTSuiteNavigatorClass:
                 return None
             testsList = suite.get("tests")
             if not testsList:
-                self.log.error("Invalid Format [suites.<index>.tests]")
-                return None
+                continue
             if test_name in testsList:
                 found = True
                 break
         if not found:
             self.log.error("Suite:[{}] Test:[{}] Not Found".format(suite_name, test_name))
             return None
-        # If Input is present we need to then wait on them
-        if promptWithAnswers is None:
-            result = self.framework.select( suite_name, test_name )
-            return result
-        result = self.framework.select( suite_name, test_name, input=True )
-        result += self.framework.inputPrompts( promptWithAnswers )
+
+        result = self.framework.select( suite_name, test_name, promptWithAnswers )
+
         return result
 
     def start(self):
@@ -361,11 +358,11 @@ if __name__ == '__main__':
                     name: "L1 dsAudio - Sink"
                     tests:
                         - None
-                1: 
+                1:
                     name: "L2 dsAudio - Sink"
                     tests:
                         - None
-                2: 
+                2:
                     name: "L3 dsAudio - Sink"
                     tests:
                         - "Initialize dsAudio"
@@ -407,11 +404,11 @@ if __name__ == '__main__':
     result = test.select( suite, "Terminate dsAudio" ) # valid case
     promptWithAnswers = {
         "Option1": {     # Group related prompts and answers under a descriptive key
-            "Select Mixer Input: ": "1", 
+            "Select Mixer Input: ": "1",
             "Set the Volume[0 to 100]: ": "100"
         },
         "Option2": {     # Another group for clarity
-            "Select Mixer Input: ": "0", 
+            "Select Mixer Input: ": "0",
             "Set the Volume[0 to 100]: ": "50"
         }
     }
@@ -420,7 +417,7 @@ if __name__ == '__main__':
     result = test.select( suite, "Set Audio Mixer Levels", promptWithAnswers["Option2"] ) # Has non matching inputs and should error
     print(result)
     test.stop()
-    
+
     #test.select( "Parent", "Child" )
     #menu_config - is currently not used
     # Upgrade the help to support menu navigation input via the yaml file
