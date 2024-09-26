@@ -159,7 +159,7 @@ class utHelperClass(testController):
 
             port = activeDevice.session.port
             # Construct the SCP command with options to disable strict host key checking and known_hosts file
-            command = ["scp", "-P", str(port), "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-o", "HostKeyAlgorithms=ssh-rsa,ssh-dss", sourcePath, destination]
+            command = ["scp", "-P", str(port), "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-o", "HostKeyAlgorithms=ssh-rsa,ssh-dss,rsa-sha2-512,rsa-sha2-256,ssh-ed25519", sourcePath, destination]
 
             # Execute the SCP command and capture the output
             result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
