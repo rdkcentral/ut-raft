@@ -93,9 +93,10 @@ class InteractiveShell(consoleInterface):
         output = ""
         intermediate_string = re.sub(r"\\(.)", r"\1", message)
         non_raw_message = intermediate_string.encode('utf-8').decode('unicode_escape')
+        escaped_message = re.escape(message)
         for attempt in range(max_attempts):
             try:
-                found = self.process.expect(message, timeout=10)  # Wait for the specific message
+                found = self.process.expect(escaped_message, timeout=10)  # Wait for the specific message
                 data = self.process.before  # This doesn't contain the message
                 if isinstance(data, bytes):
                     output = data.decode('utf-8') + non_raw_message  # Decode if it's bytes

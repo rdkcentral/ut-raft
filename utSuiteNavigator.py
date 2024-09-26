@@ -396,8 +396,8 @@ if __name__ == '__main__':
 
     suite = "L3 dsAudio - Sink"
     # Enable to test file loading assuming that we have a Audio Settings profile for testing
-    #test = UTSuiteNavigatorClass(suiteConfig, "dsAudio:", shell)
-    test = UTSuiteNavigatorClass("./host/tests/class/dsAudio_test_suite.yaml", "dsAudio:", shell)
+    test = UTSuiteNavigatorClass(suiteConfig, "dsAudio:", shell)
+    #test = UTSuiteNavigatorClass("./host/tests/class/dsAudio_test_suite.yaml", "dsAudio:", shell)
     test.start()
     test.select( suite, "test_error_validation_case" ) # error case
     result = test.select( suite, "Initialize dsAudio" ) # valid case

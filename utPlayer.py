@@ -76,7 +76,7 @@ class utPlayer():
             None
         """
         if (self.playbackTool == "gstreamer"):
-            self.session.write("\x03")
+            self.session.write("\x03")  # CNTRL-C
 
 # Test and example usage code
 if __name__ == '__main__':
