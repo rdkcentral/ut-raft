@@ -153,13 +153,12 @@ class utHelperClass(testController):
         if activeDevice.session.type == "ssh":
             self.log.stepMessage("copyFile(" + sourcePath + ", (" + destinationPath + ")")
 
-            # TODO: Assumption: 'root' user is the default on the target, this should be specified by the configuration
             username = activeDevice.session.username
             destination = "{}@{}:{}".format(username, self.slotInfo.getDeviceAddress(), destinationPath)
 
             port = activeDevice.session.port
             # Construct the SCP command with options to disable strict host key checking and known_hosts file
-            command = ["scp", "-P", str(port), "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-o", "HostKeyAlgorithms=ssh-rsa,ssh-dss,rsa-sha2-512,rsa-sha2-256,ssh-ed25519", sourcePath, destination]
+            command = ["scp", "-P", str(port), "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-o", "HostKeyAlgorithms=ssh-rsa,rsa-sha2-512,rsa-sha2-256,ssh-ed25519", sourcePath, destination]
 
             # Execute the SCP command and capture the output
             result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
