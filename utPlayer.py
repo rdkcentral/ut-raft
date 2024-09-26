@@ -35,7 +35,7 @@ class utPlayer():
     """
     UT Player class
     """
-    def __init__(self, session:object, log:logModule=None):
+    def __init__(self, session:object, playerTool:dict={'tool': 'gstreamer', 'prerequisites':[]}, log:logModule=None):
         """
         Initializes player class.
 
@@ -48,10 +48,10 @@ class utPlayer():
             self.log = logModule(self.__class__.__name__)
             self.log.setLevel( self.log.INFO )
         self.session = session
-        self.playbackTool = "gstreamer" # Assume gstreamer
-        # Any pre-launch requirements will be met by another class.
-        # If there's a `gstreamer` specific requirements if should be met here
-    
+        self.playbackTool = playerTool["tool"]
+        for cmd in playerTool["prerequisites"]:
+            self.session.write(cmd)
+
     def play(self, streamFile:str):
         """
         Starts the playback of a stream
@@ -96,9 +96,9 @@ if __name__ == '__main__':
     # Read and print the output
     output = shell.read_output()
     print(output)
-    
+
     test.stop()
-    
+
     # Read and print the output
     output = shell.read_output()
     print(output)

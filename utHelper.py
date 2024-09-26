@@ -212,7 +212,7 @@ class utHelperClass(testController):
 
         Args:
             commands (list): The command list to execute.
-            prompt (str): The expected prompt after the command execution. 
+            prompt (str): The expected prompt after the command execution.
                           If not provided, it will use the default prompt from the device configuration.
             device (str): The device to execute the command on (default: "dut").
 

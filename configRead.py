@@ -28,7 +28,7 @@ class ConfigRead:
     """
     A class to represent configuration data loaded from a YAML file.
 
-    This class facilitates the convenient loading and interaction with configuration data 
+    This class facilitates the convenient loading and interaction with configuration data
     stored in YAML format. It allows you to access YAML values using:
 
     * Dot notation (e.g., `config.section.key`)
@@ -51,21 +51,21 @@ class ConfigRead:
         Initializes the ConfigRead object by loading data from a YAML file.
 
         Args:
-            data (str or file-like object): 
+            data (str or file-like object):
                 Either a YAML string or a file-like object (e.g., opened file) containing YAML data.
-            start_key (str, optional): 
+            start_key (str, optional):
                 If provided, processing starts from this key within the YAML data. Defaults to None (process the entire YAML).
 
         Returns:
             None
 
         Attributes:
-            self.fields (dict): 
+            self.fields (dict):
                 A dictionary representation of the YAML data.
 
         Behavior:
-            * Creates attributes on the object based on YAML keys. 
-            * Numeric keys in the YAML are prefixed with an underscore '_' to ensure valid attribute names. 
+            * Creates attributes on the object based on YAML keys.
+            * Numeric keys in the YAML are prefixed with an underscore '_' to ensure valid attribute names.
 
         Example:
             YAML: `A: 0: key: value`
@@ -74,7 +74,7 @@ class ConfigRead:
         if data is not None:
             # Read YAML data
             yaml_data = self.__load_yaml__(data)
-            activate_data = yaml_data 
+            activate_data = yaml_data
 
             if start_key:
                 start_key = start_key.rstrip(":")   # Ensure there's no : in the key
@@ -95,7 +95,7 @@ class ConfigRead:
         Loads YAML data from a file or a dictionary.
 
         Args:
-            input_var (str or dict): 
+            input_var (str or dict):
                 * If a string and represents a valid filename, it's treated as the path to a YAML file.
                 * If a string but not a valid filename, it's assumed to be a YAML string itself.
                 * If a dictionary, it's assumed to be the already-loaded YAML data.
