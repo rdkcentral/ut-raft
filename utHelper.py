@@ -360,6 +360,18 @@ class utHelperClass(testController):
             else:
                 self.log.error("outboundClient not present")
 
+    def deleteFromDevice(self, files: list, device: str="dut" ):
+        """
+        Deletes the file from device
+
+        Args:
+            files (list:str): list of file paths to delete.
+            device (str) : device name ( default: "dut" )
+        """
+        for file in files:
+            cmd = "rm -rf " + file
+            self.writeCommands(cmd)
+
 # Test and example usage code
 if __name__ == '__main__':
 
