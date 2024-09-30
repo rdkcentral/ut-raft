@@ -164,7 +164,12 @@ class utCFramework:
         for prompt in promptsWithAnswers:
             session_output = self.session.read_until(prompt.get("query"))
             if prompt.get("query_type") == "menu":
-                input = self.find_index_in_output(session_output, prompt.get("input"))
+                value = self.find_index_in_output(session_output, prompt.get("input"))
+                if value is None:
+                    prompt = prompt.get("input")
+                    self.log.error(f"Test [{prompt}] not found in suite")
+                    raise ValueError(f"Test [{prompt}] not found.")
+                input = str(value)
             else:
                 input = prompt.get("input")
             self.session.write(input)
@@ -183,7 +188,7 @@ class utCFramework:
         Returns:
             int: The index of the target_name if found, otherwise None.
         """
-        pattern = r'(\d+)\.\s*' + re.escape(target_name)
+        pattern = r'(\d+)\.\s*\[?' + re.escape(target_name) + r'\]?'
         match = re.search(pattern, output)
         if match:
             return int(match.group(1))
