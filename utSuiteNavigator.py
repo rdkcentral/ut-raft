@@ -163,7 +163,7 @@ class utCFramework:
         output=""
         for prompt in promptsWithAnswers:
             session_output = self.session.read_until(prompt.get("query"))
-            if prompt.get("query_type") == "menu":
+            if prompt.get("query_type") == "list":
                 value = self.find_index_in_output(session_output, prompt.get("input"))
                 if value is None:
                     prompt = prompt.get("input")
@@ -412,7 +412,7 @@ if __name__ == '__main__':
     result = test.select( suite, "Terminate dsAudio" ) # valid case
     promptWithAnswers = [
             {
-                "query_type": "menu",
+                "query_type": "list",
                 "query": "Select dsAudio Port:",
                 "input": "dsAUDIOPORT_TYPE_SPEAKER"
             },
@@ -426,7 +426,7 @@ if __name__ == '__main__':
     print(result)
     promptWithAnswers = [
             {
-                "query_type": "menu",
+                "query_type": "list",
                 "query": "Select dsAudio Port:",
                 "input": "dsAUDIOPORT_TYPE_SPEAKER"
             },
