@@ -161,9 +161,20 @@ class utCFramework:
         """
 
         output=""
-        for prompt, input in promptsWithAnswers.items():
-            output += self.session.read_until(prompt)
+        for prompt in promptsWithAnswers:
+            session_output = self.session.read_until(prompt.get("query"))
+            if prompt.get("query_type") == "list":
+                value = self.find_index_in_output(session_output, prompt.get("input"))
+                if value is None:
+                    prompt = prompt.get("input")
+                    self.log.error(f"Test [{prompt}] not found in suite")
+                    raise ValueError(f"Test [{prompt}] not found.")
+                input = str(value)
+            else:
+                input = prompt.get("input")
             self.session.write(input)
+            output += session_output
+
         return output
 
     def find_index_in_output(self, output, target_name):
@@ -177,13 +188,10 @@ class utCFramework:
         Returns:
             int: The index of the target_name if found, otherwise None.
         """
-        lines = output.splitlines()
-        for line in lines:
-            if target_name in line:
-                # Looking for the index e.g., "1. SuiteName"
-                match = re.match(r"(\d+)\.", line.strip())
-                if match:
-                    return int(match.group(1))
+        pattern = r'(\d+)\.\s*\[?' + re.escape(target_name) + r'\]?'
+        match = re.search(pattern, output)
+        if match:
+            return int(match.group(1))
         return None
 
     def collect_results(self, output):
@@ -394,27 +402,46 @@ if __name__ == '__main__':
     result = shell.open()
     print("Shell:[{}]".format(result))
 
-    suite = "L3 dsAudio - Sink"
+    suite = "L3 dsAudio"
     # Enable to test file loading assuming that we have a Audio Settings profile for testing
     test = UTSuiteNavigatorClass(suiteConfig, "dsAudio:", shell)
-    #test = UTSuiteNavigatorClass("./host/tests/class/dsAudio_test_suite.yaml", "dsAudio:", shell)
+
     test.start()
     test.select( suite, "test_error_validation_case" ) # error case
     result = test.select( suite, "Initialize dsAudio" ) # valid case
     result = test.select( suite, "Terminate dsAudio" ) # valid case
-    promptWithAnswers = {
-        "Option1": {     # Group related prompts and answers under a descriptive key
-            "Select Mixer Input: ": "1",
-            "Set the Volume[0 to 100]: ": "100"
-        },
-        "Option2": {     # Another group for clarity
-            "Select Mixer Input: ": "0",
-            "Set the Volume[0 to 100]: ": "50"
-        }
-    }
-    result = test.select( suite, "Set Audio Mixer Levels", promptWithAnswers["Option1"] ) # Has non matching inputs and should error
+    promptWithAnswers = [
+            {
+                "query_type": "list",
+                "query": "Select dsAudio Port:",
+                "input": "dsAUDIOPORT_TYPE_SPEAKER"
+            },
+            {
+                "query_type": "direct",
+                "query": "Select dsAudio Port Index[0-10]:",
+                "input": "0"
+            }
+    ]
+    result = test.select( suite, "Enable Audio Port", promptWithAnswers ) # Has non matching inputs and should error
     print(result)
-    result = test.select( suite, "Set Audio Mixer Levels", promptWithAnswers["Option2"] ) # Has non matching inputs and should error
+    promptWithAnswers = [
+            {
+                "query_type": "list",
+                "query": "Select dsAudio Port:",
+                "input": "dsAUDIOPORT_TYPE_SPEAKER"
+            },
+            {
+                "query_type": "direct",
+                "query": "Select dsAudio Port Index[0-10]:",
+                "input": "0"
+            },
+            {
+                "query_type": "direct",
+                "query": "Enter Gain Level[0.0 to 100.0]:",
+                "input": "20"
+            }
+    ]
+    result = test.select( suite, "Set Audio Mixer Levels", promptWithAnswers ) # Has non matching inputs and should error
     print(result)
     test.stop()
 
