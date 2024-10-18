@@ -32,9 +32,9 @@ from framework.core.testControl import testController
 from framework.core.outboundClient import outboundClientClass
 from framework.core.logModule import logModule
 from framework.plugins.ut_raft.interactiveShell import InteractiveShell
+from framework.plugins.ut_raft.utBaseUtils import utBaseUtils
 
 class utHelperClass(testController):
-#class utHelperClass(): # Can be used for testing
     """
     Unit Test Helper Code
 
@@ -132,43 +132,6 @@ class utHelperClass(testController):
         session.write("chmod " + permission + " " + path + "*")  # Send the 'chmod' command
         session.write("\n")  # Send a newline
 
-    def copyFileFromHost(self, sourcePath, destinationPath, targetDevice="dut"):
-        """
-        Copies a file from the host machine to the target device using SCP (for SSH connections).
-
-        Args:
-            sourcePath (str): The source path and filename on the host.
-            destinationPath (str): The destination path and filename on the device.
-            device (str, optional): The device to copy the file to (default: "dut").
-
-        Returns:
-            str: The message from the subprocess (SCP output).
-
-        Raises:
-            ValueError: If the session type is not "ssh".
-        """
-        #TODO: Upgrade to support this via the outbound client
-        activeDevice = self.devices.getDevice(targetDevice)
-
-        if activeDevice.session.type == "ssh":
-            self.log.stepMessage("copyFile(" + sourcePath + ", (" + destinationPath + ")")
-
-            username = activeDevice.session.username
-            destination = "{}@{}:{}".format(username, self.slotInfo.getDeviceAddress(), destinationPath)
-
-            port = activeDevice.session.port
-            # Construct the SCP command with options to disable strict host key checking and known_hosts file
-            command = ["scp", "-P", str(port), "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-o", "HostKeyAlgorithms=ssh-rsa,rsa-sha2-512,rsa-sha2-256,ssh-ed25519", sourcePath, destination]
-
-            # Execute the SCP command and capture the output
-            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            message = result.stdout.decode('utf-8').strip()
-        else:
-            # self.writeMessageToDeviceSession("cp " + source + " " + destination)  # Commented out code, potentially for serial copy
-            self.log.error("Can't copy for this session type")
-            raise ValueError("Copying files is not supported for connections.")
-
-        return message
 
 # Session Command operations
     def writeCommands(self, commands: str, session:object=None):
@@ -348,16 +311,23 @@ class utHelperClass(testController):
         self.log.debug("urls( url:'{}' )".format(urls))
         self.log.debug("target_directory( target_directory:'{}' )".format(target_directory))
 
-        for url in urls:
-            # Download a file into the workspace on the host
-            # Then copy the file to target
-            file_name = os.path.basename(url)
-            if hasattr(self, 'outboundClient'):
-                self.outboundClient.downloadFile(url)
-                workspace_directory = self.outboundClient.workspaceDirectory
-                self.copyFileFromHost(os.path.join(workspace_directory, file_name), target_directory, targetDevice=device)
-            else:
-                self.log.error("outboundClient not present")
+        utils = utBaseUtils()
+        activeDevice = self.devices.getDevice(device)
+
+        if activeDevice.session.type == "ssh":
+            for url in urls:
+                # Download a file into the workspace on the host
+                # Then copy the file to target
+                file_name = os.path.basename(url)
+                if hasattr(self, 'outboundClient'):
+                    self.outboundClient.downloadFile(url)
+                    workspace_directory = self.outboundClient.workspaceDirectory
+                    utils.scpCopy(activeDevice.session, os.path.join(workspace_directory, file_name), target_directory)
+                else:
+                    self.log.error("outboundClient not present")
+        else:
+           self.log.error("Can't copy for this session type")
+           raise ValueError("Copying files is not supported for connections.")
 
     def deleteFromDevice(self, files: list, device: str="dut" ):
         """

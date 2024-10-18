@@ -52,7 +52,7 @@ class utPlayer():
         for cmd in playerTool["prerequisites"]:
             self.session.write(cmd)
 
-    def play(self, streamFile:str):
+    def play(self, streamFile:str, arguments:str = ""):
         """
         Starts the playback of a stream
         Once started the stream is assumed to be blocking on the device.
@@ -60,12 +60,13 @@ class utPlayer():
 
         Args:
             stream (str): Stream path.
+            arguments (str, optional): Arguments required for the play. Defaults to ""
         """
         #TODO: Upgrade if required or a new function to playback from a URL
         # Example usage for gst-launch `gst-launch-1.0 filesrc location=/home/yourusername/myvideo.mp4 ! decodebin ! autovideosink`
         # Example usage for gst-play `gst-play-1.0 <file_path>`
         if (self.playbackTool == "gstreamer"):
-            cmd = "gst-play-1.0" + " " + streamFile
+            cmd = "gst-play-1.0" + " " + streamFile + " " + arguments
             self.session.write(cmd)
 
     def stop(self):
