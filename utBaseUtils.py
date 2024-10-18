@@ -59,7 +59,7 @@ class utBaseUtils():
         Returns:
             str: The message from the subprocess (SCP output).
         """
-        if session.connection_type != "ssh":
+        if session.type != "ssh":
             self.log.error("Session type must be 'ssh' to use SCP")
             return None
 
