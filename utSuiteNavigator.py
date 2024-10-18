@@ -242,7 +242,7 @@ class UTSuiteNavigatorClass:
     """
     Navigates through the UTcore menu system, trigger the execution of test cases, and collect results.
     """
-    def __init__(self, config:str, startKey:str, session:consoleInterface, log:logModule=None):
+    def __init__(self, config:str, startKey:str, session:consoleInterface,  devicePath:str = "/tmp/", log:logModule=None):
         """
         Initializes the UTCoreMenuNavigator object with a menu configuration file and an optional test profile.
 
@@ -285,6 +285,8 @@ class UTSuiteNavigatorClass:
             self.log.info("C Framework Selected")
         else:
             self.log.error("Invalid Menu Type Configuration :{}".format(test_type))
+
+        self.devicePath = devicePath
 
     def select(self, suite_name: str, test_name:str = None, promptWithAnswers:dict = None ):
         """Select a menu from an already running system
@@ -329,9 +331,14 @@ class UTSuiteNavigatorClass:
         return result
 
     def start(self):
-        command = self.config.test.execute
-        #TODO: Handle opkg download and install in the future
-        result = self.framework.start(command)
+        command = self.config.test.execute.command
+        result = ""
+        if command:
+            executeCommand = os.path.join(self.devicePath, command)
+            arguments = self.config.test.execute.arguments
+            if arguments:
+                executeCommand = executeCommand + " " + arguments
+            result = self.framework.start(executeCommand)
         self.log.debug( "result [{}]".format(result))
 
     def stop(self):
