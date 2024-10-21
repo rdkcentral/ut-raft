@@ -48,6 +48,8 @@ class utHelperClass(testController):
             self.log = logModule(self.__class__.__name__)
             self.log.setLevel( self.log.INFO )
 
+        self.utils = utBaseUtils()
+
     def waitForBoot(self):
         """
         Waits for the system to boot.
@@ -132,8 +134,36 @@ class utHelperClass(testController):
         session.write("chmod " + permission + " " + path + "*")  # Send the 'chmod' command
         session.write("\n")  # Send a newline
 
+    def copyFileFromHost(self, sourcePath, destinationPath, targetDevice="dut"):
+        """
+        Copies a file from the host machine to the target device using SCP (for SSH connections).
 
-# Session Command operations
+        Args:
+            sourcePath (str): The source path and filename on the host.
+            destinationPath (str): The destination path and filename on the device.
+            device (str, optional): The device to copy the file to (default: "dut").
+
+        Returns:
+            str: The message from the subprocess (SCP output).
+
+        Raises:
+            ValueError: If the session type is not "ssh".
+        """
+        #TODO: Upgrade to support this via the outbound client
+        activeDevice = self.devices.getDevice(targetDevice)
+
+        if activeDevice.session.type == "ssh":
+            self.log.stepMessage("copyFile(" + sourcePath + ", (" + destinationPath + ")")
+
+            message = self.utils.scpCopy(activeDevice.session, sourcePath, destinationPath)
+        else:
+            # self.writeMessageToDeviceSession("cp " + source + " " + destination)  # Commented out code, potentially for serial copy
+            self.log.error("Can't copy for this session type")
+            raise ValueError("Copying files is not supported for connections.")
+
+        return message
+
+    # Session Command operations
     def writeCommands(self, commands: str, session:object=None):
         """
         Executes a command on the session
@@ -311,23 +341,16 @@ class utHelperClass(testController):
         self.log.debug("urls( url:'{}' )".format(urls))
         self.log.debug("target_directory( target_directory:'{}' )".format(target_directory))
 
-        utils = utBaseUtils()
-        activeDevice = self.devices.getDevice(device)
-
-        if activeDevice.session.type == "ssh":
-            for url in urls:
-                # Download a file into the workspace on the host
-                # Then copy the file to target
-                file_name = os.path.basename(url)
-                if hasattr(self, 'outboundClient'):
-                    self.outboundClient.downloadFile(url)
-                    workspace_directory = self.outboundClient.workspaceDirectory
-                    utils.scpCopy(activeDevice.session, os.path.join(workspace_directory, file_name), target_directory)
-                else:
-                    self.log.error("outboundClient not present")
-        else:
-           self.log.error("Can't copy for this session type")
-           raise ValueError("Copying files is not supported for connections.")
+        for url in urls:
+            # Download a file into the workspace on the host
+            # Then copy the file to target
+            file_name = os.path.basename(url)
+            if hasattr(self, 'outboundClient'):
+                self.outboundClient.downloadFile(url)
+                workspace_directory = self.outboundClient.workspaceDirectory
+                self.copyFileFromHost(os.path.join(workspace_directory, file_name), target_directory, targetDevice=device)
+            else:
+                self.log.error("outboundClient not present")
 
     def deleteFromDevice(self, files: list, device: str="dut" ):
         """

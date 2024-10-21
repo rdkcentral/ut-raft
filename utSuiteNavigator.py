@@ -242,7 +242,7 @@ class UTSuiteNavigatorClass:
     """
     Navigates through the UTcore menu system, trigger the execution of test cases, and collect results.
     """
-    def __init__(self, config:str, startKey:str, session:consoleInterface,  devicePath:str = "/tmp/", log:logModule=None):
+    def __init__(self, config:str, startKey:str, session:consoleInterface,  workSpacePath:str = "/tmp/", log:logModule=None):
         """
         Initializes the UTCoreMenuNavigator object with a menu configuration file and an optional test profile.
 
@@ -286,7 +286,7 @@ class UTSuiteNavigatorClass:
         else:
             self.log.error("Invalid Menu Type Configuration :{}".format(test_type))
 
-        self.devicePath = devicePath
+        self.workSpacePath = workSpacePath
 
     def select(self, suite_name: str, test_name:str = None, promptWithAnswers:dict = None ):
         """Select a menu from an already running system
@@ -334,7 +334,7 @@ class UTSuiteNavigatorClass:
         command = self.config.test.execute.command
         result = ""
         if command:
-            executeCommand = os.path.join(self.devicePath, command)
+            executeCommand = os.path.join(self.workSpacePath, command)
             arguments = self.config.test.execute.arguments
             if arguments:
                 executeCommand = executeCommand + " " + arguments

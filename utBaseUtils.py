@@ -31,6 +31,7 @@ sys.path.append(dir_path)
 
 from framework.core.logModule import logModule
 from framework.plugins.ut_raft.interactiveShell import InteractiveShell
+
 class utBaseUtils():
     """
     UT Base utility class providing reusable functionalities
@@ -91,7 +92,8 @@ if __name__ == '__main__':
     # Initialize the utBaseUtils class
     test = utBaseUtils()
 
-    output = test.scpCopy(shell, "/path/to/source/file", "/path/on/target/device")
+    # Assuming file.dat is available in current directory
+    output = test.scpCopy(shell, "file.dat", "/tmp")
 
     print(output)
 
