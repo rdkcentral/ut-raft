@@ -48,7 +48,7 @@ class utHelperClass(testController):
             self.log = logModule(self.__class__.__name__)
             self.log.setLevel( self.log.INFO )
 
-        self.utils = utBaseUtils()
+        self.baseUtils = utBaseUtils()
 
     def waitForBoot(self):
         """
@@ -155,7 +155,7 @@ class utHelperClass(testController):
         if activeDevice.session.type == "ssh":
             self.log.stepMessage("copyFile(" + sourcePath + ", (" + destinationPath + ")")
 
-            message = self.utils.scpCopy(activeDevice.session, sourcePath, destinationPath)
+            message = self.baseUtils.scpCopy(activeDevice.session, sourcePath, destinationPath)
         else:
             # self.writeMessageToDeviceSession("cp " + source + " " + destination)  # Commented out code, potentially for serial copy
             self.log.error("Can't copy for this session type")

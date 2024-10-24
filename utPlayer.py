@@ -22,8 +22,7 @@
 #* ******************************************************************************
 import os
 import sys
-import subprocess
-import time
+from enum import Enum
 
 # Helper always exist in the same directory under raft and can use it for confirmation testing
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -33,19 +32,22 @@ from framework.core.logModule import logModule
 from framework.plugins.ut_raft.interactiveShell import InteractiveShell
 from framework.plugins.ut_raft.configRead import ConfigRead
 
+class MixerInputTypes(Enum):
+    MIXER_INPUT_PRIMARY     = 1
+    MIXER_INPUT_SECONDARY   = 2
+
 class utPlayer():
     """
     UT Player class
     """
-    playerConfig = os.path.join(dir_path, "uPlayerConfig.yml")
 
-    def __init__(self, session:object, platform:str, player:str = "gstreamer", log:logModule=None):
+    def __init__(self, session:object, vendor:str, player:str = "gstreamer", log:logModule=None):
         """
         Initializes player class.
 
         Args:
             session (class): The session object to communicate with the device
-            platform (str): Platfrom name
+            vendor (str): vendor name
             player (str, optional) : Player to use. Defaults to gstreamer
             log (class, optional): Parent log class. Defaults to None.
         """
@@ -53,15 +55,33 @@ class utPlayer():
         if log is None:
             self.log = logModule(self.__class__.__name__)
             self.log.setLevel( self.log.INFO )
+
         self.session = session
-        self.playerProfile = ConfigRead(self.playerConfig, platform)
+
+        configPath = os.path.join(dir_path, "configs/utPlayerConfig.yml")
+        self.playerProfile = ConfigRead(configPath, vendor)
+        if self.playerProfile is None:
+            self.log.fatal("Profile not found[{}]".format(configPath))
+            sys.exit(1)
+
         self.player = self.playerProfile.get(player)
 
         if self.player.get("prerequisites"):
             for cmd in self.player.get("prerequisites"):
                 self.session.write(cmd)
 
-    def play(self, streamFile:str, mixer_input:str = "primary"):
+        self.setMixerInput(MixerInputTypes.MIXER_INPUT_PRIMARY)
+
+    def setMixerInput(self, mixer_input:MixerInputTypes):
+        if mixer_input == MixerInputTypes.MIXER_INPUT_PRIMARY:
+            self.mixerInputConfiguration = self.player.get("primary_mixer_input_config")
+        elif mixer_input == MixerInputTypes.MIXER_INPUT_SECONDARY:
+            self.mixerInputConfiguration = self.player.get("secondary_mixer_input_config")
+
+        if not self.mixerInputConfiguration:
+            self.mixerInputConfiguration = ""
+
+    def play(self, streamFile:str):
         """
         Starts the playback of a stream
         Once started the stream is assumed to be blocking on the device.
@@ -69,25 +89,12 @@ class utPlayer():
 
         Args:
             stream (str): Stream path.
-            mixer_input (str, optional): Mixer input to which audio output should be connected. Defaults to "primary"
         """
         #TODO: Upgrade if required or a new function to playback from a URL
         # Example usage for gst-launch `gst-launch-1.0 filesrc location=/home/yourusername/myvideo.mp4 ! decodebin ! autovideosink`
         # Example usage for gst-play `gst-play-1.0 <file_path>`
 
-        if mixer_input == "primary":
-            cmd = self.player.get("play_command")
-            if not cmd:
-                self.log.error("Player command not found")
-                return
-            cmd += " " + streamFile
-        elif mixer_input == "secondary":
-            cmd = self.player.get("secondary_play_command")
-            if not cmd:
-                self.log.error("Secondary Player command not found")
-                return
-            cmd += " " + streamFile
-
+        cmd = self.player.get("play_command") + " " + self.mixerInputConfiguration + " " + streamFile
         self.session.write(cmd)
 
     def stop(self):
@@ -97,12 +104,7 @@ class utPlayer():
         Args:
             None
         """
-        cmd = self.player.get("stop_command")
-        if not cmd:
-            self.log.error("Stop Player command not found")
-            return
-
-        self.session.write(cmd)
+        self.session.write(self.player.get("stop_command"))
 
 # Test and example usage code
 if __name__ == '__main__':

@@ -19,7 +19,7 @@
 # * limitations under the License.
 # *
 #* ******************************************************************************
-element: # Platform name
+amlogic: # Platform name
   gstreamer: # player Name
     prerequisites: # Prerequisites if any to run the player
       - export XDG_RUNTIME_DIR="/tmp"
@@ -37,12 +37,9 @@ element: # Platform name
       - westeros-init &
     play_command: gst-play-1.0 # Player command to play the stream
     stop_command: "\x03" # CNTRL-C
-    secondary_play_command: 'gst-play-1.0 --audiosink "amlhalasink direct-mode=0"' # Player command to play the stream and redirect to secondary port of mixer
-  player2:
-    prerequisites:
-    play_command:
-    stop_command:
-xione:
+    primary_mixer_input_config: ""
+    secondary_mixer_input_config: '--audiosink "amlhalasink direct-mode=0"'
+realtek:
   gstreamer:
     prerequisites:
       - echo 0 > /sys/devices/platform/rtk-fb/enable_osd_display
@@ -53,3 +50,5 @@ xione:
       - export LD_PRELOAD=/usr/lib/realtek/libVOutWrapper.so:/usr/lib/realtek/libjpu.so:/usr/lib/realtek/libvpu.so:/usr/lib/libwesteros_render_gl.so.0:/usr/lib/realtek/libAOutWrapper.so
     play_command: gst-play-1.0
     stop_command: "\x03" # CNTRL-C
+    primary_mixer_input_config: ""
+    secondary_mixer_input_config: ""
