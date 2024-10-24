@@ -39,7 +39,7 @@ class utPlayer():
     """
     playerConfig = os.path.join(dir_path, "uPlayerConfig.yml")
 
-    def __init__(self, session:object, platform:str, player:str = "gstreaner", log:logModule=None):
+    def __init__(self, session:object, platform:str, player:str = "gstreamer", log:logModule=None):
         """
         Initializes player class.
 
