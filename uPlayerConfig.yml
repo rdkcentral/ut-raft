@@ -1,0 +1,55 @@
+#** *****************************************************************************
+# *
+# * If not stated otherwise in this file or this component's LICENSE file the
+# * following copyright and licenses apply:
+# *
+# * Copyright 2024 RDK Management
+# *
+# * Licensed under the Apache License, Version 2.0 (the "License");
+# * you may not use this file except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *
+# http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *
+#* ******************************************************************************
+element: # Platform name
+  gstreamer: # player Name
+    prerequisites: # Prerequisites if any to run the player
+      - export XDG_RUNTIME_DIR="/tmp"
+      - export LD_PRELOAD=libwesteros_gl.so.0.0.0
+      - export WAYLAND_DISPLAY=wayland-0
+      - export WESTEROS_SINK_AMLOGIC_USE_DMABUF=1
+      - export PLAYERSINKBIN_USE_WESTEROSSINK=1
+      - export WESTEROS_GL_USE_AMLOGIC_AVSYNC=1
+      - export WESTEROS_SINK_USE_FREERUN=1
+      - export WESTEROS_GL_USE_REFRESH_LOCK=1
+      - export WESTEROS_GL_DEBUG=2
+      - export WESTEROS_SINK_USE_ESSRMGR=1
+      - export AAMP_ENABLE_OPT_OVERRIDE=true
+      - export GST_DEBUG_DUMP_DOT_DIR=/opt/
+      - westeros-init &
+    play_command: gst-play-1.0 # Player command to play the stream
+    stop_command: "\x03" # CNTRL-C
+    secondary_play_command: 'gst-play-1.0 --audiosink "amlhalasink direct-mode=0"' # Player command to play the stream and redirect to secondary port of mixer
+  player2:
+    prerequisites:
+    play_command:
+    stop_command:
+xione:
+  gstreamer:
+    prerequisites:
+      - echo 0 > /sys/devices/platform/rtk-fb/enable_osd_display
+      - export XDG_RUNTIME_DIR=/run
+      - export WAYLAND_DISPLAY=main0
+      - export LD_PRELOAD=libwesteros_gl.so.0
+      - westeros --renderer libwesteros_render_embedded.so.0.0.0 --display main0 --embedded --window-size 1920x1080 --noFBO &
+      - export LD_PRELOAD=/usr/lib/realtek/libVOutWrapper.so:/usr/lib/realtek/libjpu.so:/usr/lib/realtek/libvpu.so:/usr/lib/libwesteros_render_gl.so.0:/usr/lib/realtek/libAOutWrapper.so
+    play_command: gst-play-1.0
+    stop_command: "\x03" # CNTRL-C
