@@ -63,7 +63,7 @@ class ConfigRead:
             self.fields (dict):
                 A dictionary representation of the YAML data.
 
-        Behavior:
+        Behaviour:
             * Creates attributes on the object based on YAML keys.
             * Numeric keys in the YAML are prefixed with an underscore '_' to ensure valid attribute names.
 
@@ -72,21 +72,42 @@ class ConfigRead:
             Result: `self.A._0.key` will contain the value 'value'
         """
         if data is not None:
-            # Read YAML data
-            yaml_data = self.__load_yaml__(data)
-            activate_data = yaml_data
+            if isinstance( data, type(self)):
+                #WIn the case where we have a config read, we need to extract a subsection
+                self.fields = self._extract_subsection(data.fields, start_key)
+                # Set attributes for the extracted subsection
+                self._set_attributes(self.fields)
+            else:
+                # Read YAML data
+                yaml_data = self.__load_yaml__(data)
+                activate_data = yaml_data
 
-            if start_key:
-                start_key = start_key.rstrip(":")   # Ensure there's no : in the key
-                activate_data = yaml_data.get(start_key, {})
-                if not activate_data:
-                    raise ValueError(f"start_key [{start_key}] must be present in the data")
+                if start_key:
+                    start_key = start_key.rstrip(":")   # Ensure there's no : in the key
+                    activate_data = yaml_data.get(start_key, {})
+                    if not activate_data:
+                        raise ValueError(f"start_key [{start_key}] must be present in the data")
 
-            # Recursively set attributes
-            self._set_attributes(activate_data)
-            self.fields = activate_data
+                # Recursively set attributes
+                self._set_attributes(activate_data)
+                self.fields = activate_data
 
-    def __str__(self):
+    def _extract_subsection(self, data, start_key):
+        """
+        Extracts a subsection of the data based on the start_key.
+        """
+        if start_key is None:
+            return data  # Return the entire data if no start_key is provided
+
+        start_key = start_key.rstrip(":")
+        try:
+            subsection = data[start_key]
+        except KeyError:
+            raise ValueError(f"start_key [{start_key}] must be present in the data")
+
+        return subsection
+
+    def __str__(self):  
         # Customize this to display relevant parts of the YAML data
         return f"Configuration: {self.fields}"
 
@@ -250,10 +271,17 @@ if __name__ == '__main__':
     print(data.application.languages)  # Expected: ['Python', 'JavaScript']
     print(data.application.languages[1])  # Expected: ['JavaScript']
 
+    application = ConfigRead( data, "application" )
+
+    print(application.name)  # Expected: MyApp
+    print(application.languages)  # Expected: ['Python', 'JavaScript']
+    print(application.languages[1])  # Expected: ['JavaScript']
+
     # index method still works if required
     #print(data.field.get(["config"]["database"]["port"]))
 
     database = data.database
+    database.newField = "Hello"
 
     # Accessing configuration using attribute style
     print(database.host)  # Expected: localhost
