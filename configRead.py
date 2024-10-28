@@ -72,11 +72,13 @@ class ConfigRead:
             Result: `self.A._0.key` will contain the value 'value'
         """
         if data is not None:
-            if isinstance( data, type(self)):
+            if self.__class__.__name__ == type(data).__name__:
                 # We've been passed a ConfigRead object
                 self._copy_attributes(data, start_key)
-                self.fields = data.fields.get(start_key)
-                #print("fields[{}]".format(self.fields))
+                if start_key:
+                    self.fields = data.fields.get(start_key)
+                else:
+                    self.fields = data.fields
             else:
                 # Read YAML data
                 yaml_data = self.__load_yaml__(data)
@@ -144,7 +146,6 @@ class ConfigRead:
         Raises:
             ValueError: If `input_var` is neither a valid file path, a YAML string, nor a dictionary.
         """
-        #print("CWD:[{}]".format(os.getcwd()))
         if isinstance(input_var, str) and os.path.isfile(input_var):
             with open(input_var, 'r') as file:
                 data = yaml.safe_load(file)
@@ -259,7 +260,6 @@ class ConfigRead:
                     current_level = getattr(current_level, part)
             except (AttributeError, IndexError):
                 return None
-                #raise ValueError(f"Invalid field path: {field_path}")
 
         return current_level
 

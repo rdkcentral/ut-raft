@@ -64,6 +64,9 @@ class utBaseUtils():
             self.log.error("Session type must be 'ssh' to use SCP")
             return None
 
+        # make sure that the folder is created on the device
+        session.write(f"mkdir -p {destinationPath}")
+
         username = session.username
         destination = "{}@{}:{}".format(username, session.address, destinationPath)
 
@@ -100,23 +103,31 @@ class utBaseUtils():
             self.log.error("Session type must be 'ssh'")
             return None
 
-        username = session.username
-        destination = "{}@{}:{}".format(username, session.address, destinationPath)
+        session.write("rsync")
+        result = session.read_until("rsync")
+        message = ""
+        if "command not found" in result:
+            self.log.error("Target doesn't support rsync, using scp copy to copy the folder")
+            for files in os.listdir(sourcePath):
+                message += self.scpCopy(session, os.path.join(sourcePath, files), destinationPath)
+        else:
+            username = session.username
+            destination = "{}@{}:{}".format(username, session.address, destinationPath)
 
-        port = session.port
-        ssh_options = f"ssh -p {port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o HostKeyAlgorithms=ssh-rsa,rsa-sha2-512,rsa-sha2-256,ssh-ed25519"
-        # Construct the SCP command with options to disable strict host key checking and known_hosts file
-        command = [
-            "rsync",
-            "-av",
-            "-e",
-            ssh_options,
-            sourcePath, destination
-        ]
+            port = session.port
+            ssh_options = f"ssh -p {port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o HostKeyAlgorithms=ssh-rsa,rsa-sha2-512,rsa-sha2-256,ssh-ed25519"
+            # Construct the SCP command with options to disable strict host key checking and known_hosts file
+            command = [
+                "rsync",
+                "-av",
+                "-e",
+                ssh_options,
+                sourcePath, destination
+            ]
 
-        # Execute the SCP command and capture the output
-        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        message = result.stdout.decode('utf-8').strip()
+            # Execute the SCP command and capture the output
+            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            message = result.stdout.decode('utf-8').strip()
 
         return message
 
@@ -129,7 +140,7 @@ if __name__ == '__main__':
     test = utBaseUtils()
 
     # Assuming file.dat is available in current directory
-    output = test.scpCopy(shell, "file.dat", "/tmp")
+    output = test.scpCopy(shell, "./file.dat", "/tmp")
 
     print(output)
 
