@@ -84,6 +84,42 @@ class utBaseUtils():
 
         return message
 
+    def rsync(self, session, sourcePath, destinationPath):
+        """
+        Synchronizes files from a local source to a remote destination using rsync over SSH.
+
+        Args:
+            session (session class): The active session object that contains SSH connection details.
+            sourcePath (str): The full path of the file on the host machine.
+            destinationPath (str): The target path on the device where the file will be copied.
+
+        Returns:
+            str: The message from the subprocess.
+        """
+        if session.type != "ssh":
+            self.log.error("Session type must be 'ssh'")
+            return None
+
+        username = session.username
+        destination = "{}@{}:{}".format(username, session.address, destinationPath)
+
+        port = session.port
+        ssh_options = f"ssh -p {port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o HostKeyAlgorithms=ssh-rsa,rsa-sha2-512,rsa-sha2-256,ssh-ed25519"
+        # Construct the SCP command with options to disable strict host key checking and known_hosts file
+        command = [
+            "rsync",
+            "-av",
+            "-e",
+            ssh_options,
+            sourcePath, destination
+        ]
+
+        # Execute the SCP command and capture the output
+        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        message = result.stdout.decode('utf-8').strip()
+
+        return message
+
 # Test and example usage code
 if __name__ == '__main__':
 

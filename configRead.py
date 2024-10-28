@@ -72,9 +72,13 @@ class ConfigRead:
             Result: `self.A._0.key` will contain the value 'value'
         """
         if data is not None:
-            if isinstance( data, type(self)):
+            if type(data).__name__ == self.__class__.__name__:
                 #WIn the case where we have a config read, we need to extract a subsection
                 self.fields = self._extract_subsection(data.fields, start_key)
+                # Set attributes for the extracted subsection
+                self._set_attributes(self.fields)
+            elif isinstance(data, dict):
+                self.fields = self._extract_subsection(data, start_key)
                 # Set attributes for the extracted subsection
                 self._set_attributes(self.fields)
             else:
@@ -107,7 +111,7 @@ class ConfigRead:
 
         return subsection
 
-    def __str__(self):  
+    def __str__(self):
         # Customize this to display relevant parts of the YAML data
         return f"Configuration: {self.fields}"
 
@@ -200,7 +204,7 @@ class ConfigRead:
             self._data = []  # Initialize the list if it doesn't exist
         self._data.append(value)
 
-    def get(self, field_path:dict|list):
+    def get(self, field_path:dict|list=None):
         """
         Retrieves the value associated with a specified field path within the YAML data.
 
@@ -211,6 +215,8 @@ class ConfigRead:
             The value associated with the specified field path, or None if the path is invalid.
         """
         current_level = self.fields
+        if(field_path == None):
+            return current_level
         for part in field_path.split('.'):
             if isinstance(current_level, dict) and part in current_level:
                 current_level = current_level[part]
@@ -270,6 +276,14 @@ if __name__ == '__main__':
     print(data.application.name)  # Expected: MyApp
     print(data.application.languages)  # Expected: ['Python', 'JavaScript']
     print(data.application.languages[1])  # Expected: ['JavaScript']
+
+    dataDict = data.get()
+    dataDict["application"]["name"] = "OtherApp"
+    dataUpdate = ConfigRead( dataDict, None )
+    print(dataUpdate.application.name, dataUpdate.get("application").get("name")) # Expected: OtherApp OtherApp
+
+    dataUpdateDup = ConfigRead( dataDict, "application" )
+    print(dataUpdateDup.name, dataUpdateDup.get("name")) # Expected: OtherApp OtherApp
 
     application = ConfigRead( data, "application" )
 

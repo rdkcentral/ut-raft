@@ -41,14 +41,13 @@ class utPlayer():
     UT Player class
     """
 
-    def __init__(self, session:object, vendor:str, player:str = "gstreamer", log:logModule=None):
+    def __init__(self, session:object, vendor:str, log:logModule=None):
         """
         Initializes player class.
 
         Args:
             session (class): The session object to communicate with the device
             vendor (str): vendor name
-            player (str, optional) : Player to use. Defaults to gstreamer
             log (class, optional): Parent log class. Defaults to None.
         """
         self.log = log
@@ -64,19 +63,19 @@ class utPlayer():
             self.log.fatal("Profile not found[{}]".format(configPath))
             sys.exit(1)
 
-        self.player = self.playerProfile.get(player)
+        self.player = self.playerProfile.gstreamer
 
-        if self.player.get("prerequisites"):
-            for cmd in self.player.get("prerequisites"):
+        if self.player.prerequisites:
+            for cmd in self.player.prerequisites:
                 self.session.write(cmd)
 
         self.setMixerInput(MixerInputTypes.MIXER_INPUT_PRIMARY)
 
     def setMixerInput(self, mixer_input:MixerInputTypes):
         if mixer_input == MixerInputTypes.MIXER_INPUT_PRIMARY:
-            self.mixerInputConfiguration = self.player.get("primary_mixer_input_config")
+            self.mixerInputConfiguration = self.player.primary_mixer_input_config
         elif mixer_input == MixerInputTypes.MIXER_INPUT_SECONDARY:
-            self.mixerInputConfiguration = self.player.get("secondary_mixer_input_config")
+            self.mixerInputConfiguration = self.player.secondary_mixer_input_config
 
         if not self.mixerInputConfiguration:
             self.mixerInputConfiguration = ""
@@ -94,7 +93,7 @@ class utPlayer():
         # Example usage for gst-launch `gst-launch-1.0 filesrc location=/home/yourusername/myvideo.mp4 ! decodebin ! autovideosink`
         # Example usage for gst-play `gst-play-1.0 <file_path>`
 
-        cmd = self.player.get("play_command") + " " + self.mixerInputConfiguration + " " + streamFile
+        cmd = self.player.play_command + " " + self.mixerInputConfiguration + " " + streamFile
         self.session.write(cmd)
 
     def stop(self):
@@ -104,7 +103,7 @@ class utPlayer():
         Args:
             None
         """
-        self.session.write(self.player.get("stop_command"))
+        self.session.write(self.player.stop_command)
 
 # Test and example usage code
 if __name__ == '__main__':
