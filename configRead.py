@@ -72,15 +72,11 @@ class ConfigRead:
             Result: `self.A._0.key` will contain the value 'value'
         """
         if data is not None:
-            if type(data).__name__ == self.__class__.__name__:
-                #WIn the case where we have a config read, we need to extract a subsection
-                self.fields = self._extract_subsection(data.fields, start_key)
-                # Set attributes for the extracted subsection
-                self._set_attributes(self.fields)
-            elif isinstance(data, dict):
-                self.fields = self._extract_subsection(data, start_key)
-                # Set attributes for the extracted subsection
-                self._set_attributes(self.fields)
+            if isinstance( data, type(self)):
+                # We've been passed a ConfigRead object
+                self._copy_attributes(data, start_key)
+                self.fields = data.fields.get(start_key)
+                #print("fields[{}]".format(self.fields))
             else:
                 # Read YAML data
                 yaml_data = self.__load_yaml__(data)
@@ -96,20 +92,37 @@ class ConfigRead:
                 self._set_attributes(activate_data)
                 self.fields = activate_data
 
-    def _extract_subsection(self, data, start_key):
+    def _copy_attributes(self, data, start_key):
         """
-        Extracts a subsection of the data based on the start_key.
+        Recursively copies attributes from another ConfigRead object.
         """
         if start_key is None:
-            return data  # Return the entire data if no start_key is provided
+            # Copy all attributes if no start_key is provided
+            for name, value in vars(data).items():
+                self._recursive_copy_attribute(name, value)
+        else:
+            start_key = start_key.rstrip(":")
+            try:
+                # Copy the attribute corresponding to the start_key
+                value = getattr(data, start_key)
+                for name, value in vars(value).items():
+                    self._recursive_copy_attribute(name, value)
+            except AttributeError:
+                raise ValueError(f"start_key [{start_key}] must be a valid attribute")
 
-        start_key = start_key.rstrip(":")
-        try:
-            subsection = data[start_key]
-        except KeyError:
-            raise ValueError(f"start_key [{start_key}] must be present in the data")
-
-        return subsection
+    def _recursive_copy_attribute(self, name, value):
+        """
+        Recursively copies an attribute and its value.
+        """
+        if isinstance(value, ConfigRead):
+            # Create a new ConfigRead object for nested attributes
+            setattr(self, name, ConfigRead())
+            # Recursively copy attributes from the nested object
+            for nested_name, nested_value in vars(value).items():
+                getattr(self, name)._recursive_copy_attribute(nested_name, nested_value)
+        else:
+            # Directly set the attribute value
+            setattr(self, name, value)
 
     def __str__(self):
         # Customize this to display relevant parts of the YAML data
@@ -143,7 +156,23 @@ class ConfigRead:
                 if data is None:
                     self.log.error("Invalid Input File: [{}]".format(input_var))
                 return data
+        elif isinstance(input_var, dict):
+                return input_var
         raise ValueError("Input must be a valid file path or a dictionary")
+
+    # def __setattr__(self, name, value):
+    #     """
+    #     Controls attribute assignment.
+    #     """
+    #     if isinstance(value, dict):
+    #         # If the value is a dictionary, create a nested ConfigRead object
+    #         value = ConfigRead(value)
+
+    #     # Validation: Ensure all values are correct types
+    #     if not isinstance(value, (str, int, float, list, type(None), type(self))):  
+    #         raise ValueError(f"Invalid value type for attribute '{name}': {type(value)}")
+
+    #     super().__setattr__(name, value)  # Assign the value to the attribute
 
     def _set_attributes(self, data):
         """
@@ -215,7 +244,7 @@ class ConfigRead:
             The value associated with the specified field path, or None if the path is invalid.
         """
         current_level = self.fields
-        if(field_path == None):
+        if field_path is None:
             return current_level
         for part in field_path.split('.'):
             if isinstance(current_level, dict) and part in current_level:
@@ -273,21 +302,15 @@ if __name__ == '__main__':
     # Accessing configuration using attribute style
     print(data.database.host)  # Expected: localhost
     print(data.database.port)  # Expected: 5432
-    print(data.application.name)  # Expected: MyApp
+    print("Name:[{}]".format(data.application.name))  # Expected: MyApp
     print(data.application.languages)  # Expected: ['Python', 'JavaScript']
     print(data.application.languages[1])  # Expected: ['JavaScript']
 
-    dataDict = data.get()
-    dataDict["application"]["name"] = "OtherApp"
-    dataUpdate = ConfigRead( dataDict, None )
-    print(dataUpdate.application.name, dataUpdate.get("application").get("name")) # Expected: OtherApp OtherApp
-
-    dataUpdateDup = ConfigRead( dataDict, "application" )
-    print(dataUpdateDup.name, dataUpdateDup.get("name")) # Expected: OtherApp OtherApp
+    data.application.name = "bob"
 
     application = ConfigRead( data, "application" )
 
-    print(application.name)  # Expected: MyApp
+    print("Name:[{}]".format(application.name))  # Expected: MyApp
     print(application.languages)  # Expected: ['Python', 'JavaScript']
     print(application.languages[1])  # Expected: ['JavaScript']
 
