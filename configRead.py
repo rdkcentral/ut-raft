@@ -233,26 +233,34 @@ class ConfigRead:
             self._data = []  # Initialize the list if it doesn't exist
         self._data.append(value)
 
-    def get(self, field_path:dict|list=None):
+    def get(self, field_path: str = None):
         """
-        Retrieves the value associated with a specified field path within the YAML data.
+        Retrieves the value associated with a specified field path, 
+        always returning an attribute (or the object itself).
 
         Args:
-            field_path (dict|list): A dot-separated path to the desired field (e.g., "section.subsection.key").
+            field_path (str, optional): A dot-separated path to the 
+                                       desired field (e.g., "section.subsection.key").
 
         Returns:
-            The value associated with the specified field path, or None if the path is invalid.
+            The attribute (or object itself) associated with the field path.
         """
-        current_level = self.fields
         if field_path is None:
-            return current_level
+            return self  # Return the entire object
+
+        current_level = self
         for part in field_path.split('.'):
-            if isinstance(current_level, dict) and part in current_level:
-                current_level = current_level[part]
-            elif isinstance(current_level, list) and part.isdigit() and 0 <= int(part) < len(current_level):
-                current_level = current_level[int(part)]
-            else:
-                return None  # Invalid field path
+            try:
+                # Check if the part is an integer
+                if part.isdigit():
+                    index = int(part)
+                    current_level = current_level[index]  # Access list element by index
+                else:
+                    current_level = getattr(current_level, part)
+            except (AttributeError, IndexError):
+                return None
+                #raise ValueError(f"Invalid field path: {field_path}")
+
         return current_level
 
 # Test and example usage code
