@@ -161,20 +161,6 @@ class ConfigRead:
                 return input_var
         raise ValueError("Input must be a valid file path or a dictionary")
 
-    # def __setattr__(self, name, value):
-    #     """
-    #     Controls attribute assignment.
-    #     """
-    #     if isinstance(value, dict):
-    #         # If the value is a dictionary, create a nested ConfigRead object
-    #         value = ConfigRead(value)
-
-    #     # Validation: Ensure all values are correct types
-    #     if not isinstance(value, (str, int, float, list, type(None), type(self))):  
-    #         raise ValueError(f"Invalid value type for attribute '{name}': {type(value)}")
-
-    #     super().__setattr__(name, value)  # Assign the value to the attribute
-
     def _set_attributes(self, data):
         """
         Recursively sets object attributes from YAML data.
@@ -309,32 +295,45 @@ if __name__ == '__main__':
     data = ConfigRead(input_data, "config")
     # Accessing configuration using attribute style
     print(data.database.host)  # Expected: localhost
+    assert data.database.host == "localhost", "Expected localhost"
     print(data.database.port)  # Expected: 5432
+    assert data.database.port == 5432, "Expected 5432"
     print("Name:[{}]".format(data.application.name))  # Expected: MyApp
+    assert data.application.name == "MyApp", "Expected MyApp"
     print(data.application.languages)  # Expected: ['Python', 'JavaScript']
+    assert data.application.languages == ['Python', 'JavaScript'], "Expected ['Python', 'JavaScript']"
     print(data.application.languages[1])  # Expected: ['JavaScript']
+    assert data.application.languages[1] == "JavaScript", "Expected JavaScript"
 
     data.application.name = "bob"
 
     application = ConfigRead( data, "application" )
 
-    print("Name:[{}]".format(application.name))  # Expected: MyApp
+    print("Name:[{}]".format(application.name))  # Expected: bob
+    assert application.name == "bob", "Expected: Bob"
     print(application.languages)  # Expected: ['Python', 'JavaScript']
+    assert application.languages == ['Python', 'JavaScript'], "Expected ['Python', 'JavaScript']"
     print(application.languages[1])  # Expected: ['JavaScript']
+    assert application.languages[1] == "JavaScript", "Expected JavaScript"
 
     # index method still works if required
     #print(data.field.get(["config"]["database"]["port"]))
 
     database = data.database
     database.newField = "Hello"
+    assert database.newField == "Hello", "Expected: Hello"
 
     # Accessing configuration using attribute style
     print(database.host)  # Expected: localhost
+    assert database.host == "localhost", "Expected: localhost"
     print(database.port)  # Expected: 5432
+    assert database.port == 5432, "Expected: 5432"
 
     data = ConfigRead(input_data)
     print(data.config.database.host)  # Expected: localhost
+    assert data.config.database.host == "localhost", "Expected: localhost"    
     print(data.config.database.port)  # Expected: 5432
+    assert data.config.database.port == 5432, "Expected: 5432"
 
     # Example 1: Accessing a simple value
     value = data.get("config.application.name")
@@ -343,21 +342,32 @@ if __name__ == '__main__':
     # Example 2: Accessing a nested value
     value = data.get("config.application.languages.0")
     print(value)  # Output: Python
+    assert value == "Python", "Expected: Python"
 
     # Example 3: Handling invalid field paths
     value = data.get("config.nonexistent.field")
     print(value)  # Output: None
+    assert value == None, "Expected: None"
 
     IAudioDecoderManager = ConfigRead(profile_check, "IAudioDecoderManager")
     print( IAudioDecoderManager )   # TODO: Doesn't currently list objects, unclear if it should
-    print( IAudioDecoderManager.interfaceVersion )  # Expected: localhost
+    print( IAudioDecoderManager.interfaceVersion )  # Expected: 1
+    assert IAudioDecoderManager.interfaceVersion == 1, "Expected: 1"
 
     decoders = IAudioDecoderManager._0.supportedCodecs
+    checkDecoders = ['AAC_LC', 'HE_AAC', 'HE_AAC2', 'DOLBY_AC3', 'DOLBY_AC3_PLUS', 'DOLBY_AC3_PLUS_JOC', 'DOLBY_AC4', 'X_HE_AAC']
     print(decoders)
+    assert( decoders == checkDecoders, "Expected: {}".format(checkDecoders))
     print(decoders[1])
+    assert( decoders[1] == checkDecoders[1], "Expected: {}".format(checkDecoders[1]))
     print(decoders[5])
+    assert( decoders[5] == checkDecoders[5], "Expected: {}".format(checkDecoders[5]))
 
     decoders1 = IAudioDecoderManager._1
     print(decoders1.supportedCodecs)  # Expected: localhost
-    print(decoders1.supportsSecure)  # Expected: 5432
+    codecs = ["AAC_LC", "HE_AAC", "HE_AAC2", "DOLBY_AC3", "DOLBY_AC3_PLUS", "DOLBY_AC3_PLUS_JOC", "DOLBY_AC4", "X_HE_AAC"]
+    assert decoders1.supportedCodecs == codecs, "{}".format(codecs)
+    
+    print(decoders1.supportsSecure)  # Expected: True
+    assert decoders1.supportsSecure == True, "Expected: True"
 
