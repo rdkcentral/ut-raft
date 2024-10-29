@@ -1,0 +1,17 @@
+control_devices:
+  irblaster:
+    type: physical
+    command_port: /dev/irblaster  # hypothetical path
+    supported_commands:
+      - PowerOn
+      - PowerOff
+      - VolumeUp
+      - VolumeDown
+  hdmicec:
+    type: virtual
+    ws_port: 8000
+    supported_commands:
+      - ImageViewOn
+      - ActiveSource
+      - Standby
+      - Hotplug
