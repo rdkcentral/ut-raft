@@ -357,11 +357,11 @@ if __name__ == '__main__':
     decoders = IAudioDecoderManager._0.supportedCodecs
     checkDecoders = ['AAC_LC', 'HE_AAC', 'HE_AAC2', 'DOLBY_AC3', 'DOLBY_AC3_PLUS', 'DOLBY_AC3_PLUS_JOC', 'DOLBY_AC4', 'X_HE_AAC']
     print(decoders)
-    assert( decoders == checkDecoders, "Expected: {}".format(checkDecoders))
+    assert decoders == checkDecoders, f"Expected: {checkDecoders}"
     print(decoders[1])
-    assert( decoders[1] == checkDecoders[1], "Expected: {}".format(checkDecoders[1]))
+    assert decoders[1] == checkDecoders[1], f"Expected: {checkDecoders[1]}"
     print(decoders[5])
-    assert( decoders[5] == checkDecoders[5], "Expected: {}".format(checkDecoders[5]))
+    assert decoders[5] == checkDecoders[5], f"Expected: {checkDecoders[5]}"
 
     decoders1 = IAudioDecoderManager._1
     print(decoders1.supportedCodecs)  # Expected: localhost
