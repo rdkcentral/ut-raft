@@ -61,7 +61,6 @@ class utPlayer():
         self.playerProfile = ConfigRead(configPath, vendor)
         if self.playerProfile is None:
             self.log.fatal("Profile not found[{}]".format(configPath))
-            sys.exit(1)
 
         self.player = self.playerProfile.gstreamer
 

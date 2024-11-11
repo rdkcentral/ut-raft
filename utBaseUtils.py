@@ -61,8 +61,7 @@ class utBaseUtils():
             str: The message from the subprocess (SCP output).
         """
         if session.type != "ssh":
-            self.log.error("Session type must be 'ssh' to use SCP")
-            return None
+            self.log.fatal("Session type must be 'ssh'")
 
         # make sure that the folder is created on the device
         session.write(f"mkdir -p {destinationPath}")
@@ -100,8 +99,7 @@ class utBaseUtils():
             str: The message from the subprocess.
         """
         if session.type != "ssh":
-            self.log.error("Session type must be 'ssh'")
-            return None
+            self.log.fatal("Session type must be 'ssh'")
 
         session.write("rsync")
         result = session.read_until("rsync")
@@ -141,6 +139,11 @@ if __name__ == '__main__':
 
     # Assuming file.dat is available in current directory
     output = test.scpCopy(shell, "./file.dat", "/tmp")
+
+    print(output)
+
+    # Assuming bin folder is available in current directory
+    output = test.rsync(shell, "./bin/", "/tmp")
 
     print(output)
 

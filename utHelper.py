@@ -43,8 +43,8 @@ class utHelperClass(testController):
     """
     def __init__(self, testName:str, qcId:str, log:logModule=None ):
         super().__init__(testName, qcId, log=log )
-        self.log=log
-        if log is None:
+
+        if self.log is None:
             self.log = logModule(self.__class__.__name__)
             self.log.setLevel( self.log.INFO )
 
