@@ -251,9 +251,10 @@ class UTSuiteNavigatorClass:
         ```yaml
         module:  # Prefix must always exist
             description: "dsAudio Device Settings testing profile for UT"
+            targetWorkspace: "/tmp/${startKey}/" # Defined by the caller (not currently used by this module)
             test:
-                execute: "../bin/run.sh -p ../profiles/module_profile.yaml"
-                type: UT-C # C (UT-C Cunit) / C++ (UT-G (g++ ut-core gtest backend))
+                execute: "../bin/run.sh -p ${targetWorkspace}/profiles/module_profile.yaml" # defined by the caller
+                type: UT-C # C (c backend) / C++ (UT-G (g++ backend)
                 suites:
                     0:
                         name: "L1 Suite"
@@ -266,10 +267,9 @@ class UTSuiteNavigatorClass:
                             - "Test 2"
                             - "Test 3"
         ```
-
         Args:
-            config (str): The file path to the menu configuration YAML file or a string
-            startKey (str): Optional Index string into the config
+            config (str): The file path to the menu configuration YAML file or a decoded object
+            startKey (str): Optional Index string into the config, and used in ${targetWorkspace}
             session: (consoleInterface) The console session object to communicate
             log: (logModule, optional) Log module to use
         """
@@ -277,8 +277,8 @@ class UTSuiteNavigatorClass:
         self.config = ConfigRead(config, startKey)
         if log is None:
             self.log = logModule(self.__class__.__name__)
-        test_type = self.config.test.type
         self.log.setLevel( self.log.INFO )
+        test_type = self.config.test.type
         if test_type == "UT-C" or test_type == "C":
             # Currently support the C Framework
             self.framework = utCFramework(session)
@@ -330,7 +330,6 @@ class UTSuiteNavigatorClass:
 
     def start(self):
         command = self.config.test.execute
-        #TODO: Handle opkg download and install in the future
         result = self.framework.start(command)
         self.log.debug( "result [{}]".format(result))
 

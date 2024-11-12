@@ -22,8 +22,7 @@
 #* ******************************************************************************
 import os
 import sys
-import subprocess
-import time
+from enum import Enum
 
 # Helper always exist in the same directory under raft and can use it for confirmation testing
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -31,26 +30,54 @@ sys.path.append(dir_path+"/../../../")
 
 from framework.core.logModule import logModule
 from framework.plugins.ut_raft.interactiveShell import InteractiveShell
+from framework.plugins.ut_raft.configRead import ConfigRead
+
+class MixerInputTypes(Enum):
+    MIXER_INPUT_PRIMARY     = 1
+    MIXER_INPUT_SECONDARY   = 2
+
 class utPlayer():
     """
     UT Player class
     """
-    def __init__(self, session:object, playerTool:dict={'tool': 'gstreamer', 'prerequisites':[]}, log:logModule=None):
+
+    def __init__(self, session:object, vendor:str, log:logModule=None):
         """
         Initializes player class.
 
         Args:
             session (class): The session object to communicate with the device
+            vendor (str): vendor name
             log (class, optional): Parent log class. Defaults to None.
         """
         self.log = log
         if log is None:
             self.log = logModule(self.__class__.__name__)
             self.log.setLevel( self.log.INFO )
+
         self.session = session
-        self.playbackTool = playerTool["tool"]
-        for cmd in playerTool["prerequisites"]:
-            self.session.write(cmd)
+
+        configPath = os.path.join(dir_path, "configs/utPlayerConfig.yml")
+        self.playerProfile = ConfigRead(configPath, vendor)
+        if self.playerProfile is None:
+            self.log.fatal("Profile not found[{}]".format(configPath))
+
+        self.player = self.playerProfile.gstreamer
+
+        if self.player.prerequisites:
+            for cmd in self.player.prerequisites:
+                self.session.write(cmd)
+
+        self.setMixerInput(MixerInputTypes.MIXER_INPUT_PRIMARY)
+
+    def setMixerInput(self, mixer_input:MixerInputTypes):
+        if mixer_input == MixerInputTypes.MIXER_INPUT_PRIMARY:
+            self.mixerInputConfiguration = self.player.primary_mixer_input_config
+        elif mixer_input == MixerInputTypes.MIXER_INPUT_SECONDARY:
+            self.mixerInputConfiguration = self.player.secondary_mixer_input_config
+
+        if not self.mixerInputConfiguration:
+            self.mixerInputConfiguration = ""
 
     def play(self, streamFile:str):
         """
@@ -64,9 +91,9 @@ class utPlayer():
         #TODO: Upgrade if required or a new function to playback from a URL
         # Example usage for gst-launch `gst-launch-1.0 filesrc location=/home/yourusername/myvideo.mp4 ! decodebin ! autovideosink`
         # Example usage for gst-play `gst-play-1.0 <file_path>`
-        if (self.playbackTool == "gstreamer"):
-            cmd = "gst-play-1.0" + " " + streamFile
-            self.session.write(cmd)
+
+        cmd = self.player.play_command + " " + self.mixerInputConfiguration + " " + streamFile
+        self.session.write(cmd)
 
     def stop(self):
         """
@@ -75,8 +102,7 @@ class utPlayer():
         Args:
             None
         """
-        if (self.playbackTool == "gstreamer"):
-            self.session.write("\x03")  # CNTRL-C
+        self.session.write(self.player.stop_command)
 
 # Test and example usage code
 if __name__ == '__main__':
@@ -90,7 +116,16 @@ if __name__ == '__main__':
     # test the class
     shell = InteractiveShell()
 
-    test = utPlayer(shell)
+    test = utPlayer(shell, "amlogic")
+    test.play("/tmp/audioTest.mp3")
+
+    # Read and print the output
+    output = shell.read_output()
+    print(output)
+
+    test.stop()
+
+    test.setMixerInput(MixerInputTypes.MIXER_INPUT_SECONDARY)
     test.play("/tmp/audioTest.mp3")
 
     # Read and print the output
