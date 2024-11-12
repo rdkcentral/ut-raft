@@ -32,9 +32,9 @@ from framework.core.testControl import testController
 from framework.core.outboundClient import outboundClientClass
 from framework.core.logModule import logModule
 from framework.plugins.ut_raft.interactiveShell import InteractiveShell
+from framework.plugins.ut_raft.utBaseUtils import utBaseUtils
 
 class utHelperClass(testController):
-#class utHelperClass(): # Can be used for testing
     """
     Unit Test Helper Code
 
@@ -43,10 +43,12 @@ class utHelperClass(testController):
     """
     def __init__(self, testName:str, qcId:str, log:logModule=None ):
         super().__init__(testName, qcId, log=log )
-        self.log=log
-        if log is None:
+
+        if self.log is None:
             self.log = logModule(self.__class__.__name__)
             self.log.setLevel( self.log.INFO )
+
+        self.baseUtils = utBaseUtils()
 
     def waitForBoot(self):
         """
@@ -153,16 +155,7 @@ class utHelperClass(testController):
         if activeDevice.session.type == "ssh":
             self.log.stepMessage("copyFile(" + sourcePath + ", (" + destinationPath + ")")
 
-            username = activeDevice.session.username
-            destination = "{}@{}:{}".format(username, self.slotInfo.getDeviceAddress(), destinationPath)
-
-            port = activeDevice.session.port
-            # Construct the SCP command with options to disable strict host key checking and known_hosts file
-            command = ["scp", "-P", str(port), "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-o", "HostKeyAlgorithms=ssh-rsa,rsa-sha2-512,rsa-sha2-256,ssh-ed25519", sourcePath, destination]
-
-            # Execute the SCP command and capture the output
-            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            message = result.stdout.decode('utf-8').strip()
+            message = self.baseUtils.scpCopy(activeDevice.session, sourcePath, destinationPath)
         else:
             # self.writeMessageToDeviceSession("cp " + source + " " + destination)  # Commented out code, potentially for serial copy
             self.log.error("Can't copy for this session type")
@@ -170,7 +163,7 @@ class utHelperClass(testController):
 
         return message
 
-# Session Command operations
+    # Session Command operations
     def writeCommands(self, commands: str, session:object=None):
         """
         Executes a command on the session

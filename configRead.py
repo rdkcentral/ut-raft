@@ -63,7 +63,7 @@ class ConfigRead:
             self.fields (dict):
                 A dictionary representation of the YAML data.
 
-        Behavior:
+        Behaviour:
             * Creates attributes on the object based on YAML keys.
             * Numeric keys in the YAML are prefixed with an underscore '_' to ensure valid attribute names.
 
@@ -72,19 +72,59 @@ class ConfigRead:
             Result: `self.A._0.key` will contain the value 'value'
         """
         if data is not None:
-            # Read YAML data
-            yaml_data = self.__load_yaml__(data)
-            activate_data = yaml_data
+            if self.__class__.__name__ == type(data).__name__:
+                # We've been passed a ConfigRead object
+                self._copy_attributes(data, start_key)
+                if start_key:
+                    self.fields = data.fields.get(start_key)
+                else:
+                    self.fields = data.fields
+            else:
+                # Read YAML data
+                yaml_data = self.__load_yaml__(data)
+                activate_data = yaml_data
 
-            if start_key:
-                start_key = start_key.rstrip(":")   # Ensure there's no : in the key
-                activate_data = yaml_data.get(start_key, {})
-                if not activate_data:
-                    raise ValueError(f"start_key [{start_key}] must be present in the data")
+                if start_key:
+                    start_key = start_key.rstrip(":")   # Ensure there's no : in the key
+                    activate_data = yaml_data.get(start_key, {})
+                    if not activate_data:
+                        raise ValueError(f"start_key [{start_key}] must be present in the data")
 
-            # Recursively set attributes
-            self._set_attributes(activate_data)
-            self.fields = activate_data
+                # Recursively set attributes
+                self._set_attributes(activate_data)
+                self.fields = activate_data
+
+    def _copy_attributes(self, data, start_key):
+        """
+        Recursively copies attributes from another ConfigRead object.
+        """
+        if start_key is None:
+            # Copy all attributes if no start_key is provided
+            for name, value in vars(data).items():
+                self._recursive_copy_attribute(name, value)
+        else:
+            start_key = start_key.rstrip(":")
+            try:
+                # Copy the attribute corresponding to the start_key
+                value = getattr(data, start_key)
+                for name, value in vars(value).items():
+                    self._recursive_copy_attribute(name, value)
+            except AttributeError:
+                raise ValueError(f"start_key [{start_key}] must be a valid attribute")
+
+    def _recursive_copy_attribute(self, name, value):
+        """
+        Recursively copies an attribute and its value.
+        """
+        if isinstance(value, ConfigRead):
+            # Create a new ConfigRead object for nested attributes
+            setattr(self, name, ConfigRead())
+            # Recursively copy attributes from the nested object
+            for nested_name, nested_value in vars(value).items():
+                getattr(self, name)._recursive_copy_attribute(nested_name, nested_value)
+        else:
+            # Directly set the attribute value
+            setattr(self, name, value)
 
     def __str__(self):
         # Customize this to display relevant parts of the YAML data
@@ -106,7 +146,6 @@ class ConfigRead:
         Raises:
             ValueError: If `input_var` is neither a valid file path, a YAML string, nor a dictionary.
         """
-        #print("CWD:[{}]".format(os.getcwd()))
         if isinstance(input_var, str) and os.path.isfile(input_var):
             with open(input_var, 'r') as file:
                 data = yaml.safe_load(file)
@@ -118,6 +157,8 @@ class ConfigRead:
                 if data is None:
                     self.log.error("Invalid Input File: [{}]".format(input_var))
                 return data
+        elif isinstance(input_var, dict):
+                return input_var
         raise ValueError("Input must be a valid file path or a dictionary")
 
     def _set_attributes(self, data):
@@ -179,24 +220,33 @@ class ConfigRead:
             self._data = []  # Initialize the list if it doesn't exist
         self._data.append(value)
 
-    def get(self, field_path:dict|list):
+    def get(self, field_path: str = None):
         """
-        Retrieves the value associated with a specified field path within the YAML data.
+        Retrieves the value associated with a specified field path, 
+        always returning an attribute (or the object itself).
 
         Args:
-            field_path (dict|list): A dot-separated path to the desired field (e.g., "section.subsection.key").
+            field_path (str, optional): A dot-separated path to the 
+                                       desired field (e.g., "section.subsection.key").
 
         Returns:
-            The value associated with the specified field path, or None if the path is invalid.
+            The attribute (or object itself) associated with the field path.
         """
-        current_level = self.fields
+        if field_path is None:
+            return self  # Return the entire object
+
+        current_level = self
         for part in field_path.split('.'):
-            if isinstance(current_level, dict) and part in current_level:
-                current_level = current_level[part]
-            elif isinstance(current_level, list) and part.isdigit() and 0 <= int(part) < len(current_level):
-                current_level = current_level[int(part)]
-            else:
-                return None  # Invalid field path
+            try:
+                # Check if the part is an integer
+                if part.isdigit():
+                    index = int(part)
+                    current_level = current_level[index]  # Access list element by index
+                else:
+                    current_level = getattr(current_level, part)
+            except (AttributeError, IndexError):
+                return None
+
         return current_level
 
 # Test and example usage code
@@ -245,23 +295,45 @@ if __name__ == '__main__':
     data = ConfigRead(input_data, "config")
     # Accessing configuration using attribute style
     print(data.database.host)  # Expected: localhost
+    assert data.database.host == "localhost", "Expected localhost"
     print(data.database.port)  # Expected: 5432
-    print(data.application.name)  # Expected: MyApp
+    assert data.database.port == 5432, "Expected 5432"
+    print("Name:[{}]".format(data.application.name))  # Expected: MyApp
+    assert data.application.name == "MyApp", "Expected MyApp"
     print(data.application.languages)  # Expected: ['Python', 'JavaScript']
+    assert data.application.languages == ['Python', 'JavaScript'], "Expected ['Python', 'JavaScript']"
     print(data.application.languages[1])  # Expected: ['JavaScript']
+    assert data.application.languages[1] == "JavaScript", "Expected JavaScript"
+
+    data.application.name = "bob"
+
+    application = ConfigRead( data, "application" )
+
+    print("Name:[{}]".format(application.name))  # Expected: bob
+    assert application.name == "bob", "Expected: Bob"
+    print(application.languages)  # Expected: ['Python', 'JavaScript']
+    assert application.languages == ['Python', 'JavaScript'], "Expected ['Python', 'JavaScript']"
+    print(application.languages[1])  # Expected: ['JavaScript']
+    assert application.languages[1] == "JavaScript", "Expected JavaScript"
 
     # index method still works if required
     #print(data.field.get(["config"]["database"]["port"]))
 
     database = data.database
+    database.newField = "Hello"
+    assert database.newField == "Hello", "Expected: Hello"
 
     # Accessing configuration using attribute style
     print(database.host)  # Expected: localhost
+    assert database.host == "localhost", "Expected: localhost"
     print(database.port)  # Expected: 5432
+    assert database.port == 5432, "Expected: 5432"
 
     data = ConfigRead(input_data)
     print(data.config.database.host)  # Expected: localhost
+    assert data.config.database.host == "localhost", "Expected: localhost"    
     print(data.config.database.port)  # Expected: 5432
+    assert data.config.database.port == 5432, "Expected: 5432"
 
     # Example 1: Accessing a simple value
     value = data.get("config.application.name")
@@ -270,21 +342,32 @@ if __name__ == '__main__':
     # Example 2: Accessing a nested value
     value = data.get("config.application.languages.0")
     print(value)  # Output: Python
+    assert value == "Python", "Expected: Python"
 
     # Example 3: Handling invalid field paths
     value = data.get("config.nonexistent.field")
     print(value)  # Output: None
+    assert value == None, "Expected: None"
 
     IAudioDecoderManager = ConfigRead(profile_check, "IAudioDecoderManager")
     print( IAudioDecoderManager )   # TODO: Doesn't currently list objects, unclear if it should
-    print( IAudioDecoderManager.interfaceVersion )  # Expected: localhost
+    print( IAudioDecoderManager.interfaceVersion )  # Expected: 1
+    assert IAudioDecoderManager.interfaceVersion == 1, "Expected: 1"
 
     decoders = IAudioDecoderManager._0.supportedCodecs
+    checkDecoders = ['AAC_LC', 'HE_AAC', 'HE_AAC2', 'DOLBY_AC3', 'DOLBY_AC3_PLUS', 'DOLBY_AC3_PLUS_JOC', 'DOLBY_AC4', 'X_HE_AAC']
     print(decoders)
+    assert decoders == checkDecoders, f"Expected: {checkDecoders}"
     print(decoders[1])
+    assert decoders[1] == checkDecoders[1], f"Expected: {checkDecoders[1]}"
     print(decoders[5])
+    assert decoders[5] == checkDecoders[5], f"Expected: {checkDecoders[5]}"
 
     decoders1 = IAudioDecoderManager._1
     print(decoders1.supportedCodecs)  # Expected: localhost
-    print(decoders1.supportsSecure)  # Expected: 5432
+    codecs = ["AAC_LC", "HE_AAC", "HE_AAC2", "DOLBY_AC3", "DOLBY_AC3_PLUS", "DOLBY_AC3_PLUS_JOC", "DOLBY_AC4", "X_HE_AAC"]
+    assert decoders1.supportedCodecs == codecs, "{}".format(codecs)
+    
+    print(decoders1.supportsSecure)  # Expected: True
+    assert decoders1.supportsSecure == True, "Expected: True"
 
