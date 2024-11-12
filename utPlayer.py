@@ -116,7 +116,16 @@ if __name__ == '__main__':
     # test the class
     shell = InteractiveShell()
 
-    test = utPlayer(shell, "element", "gstreamer")
+    test = utPlayer(shell, "amlogic")
+    test.play("/tmp/audioTest.mp3")
+
+    # Read and print the output
+    output = shell.read_output()
+    print(output)
+
+    test.stop()
+
+    test.setMixerInput(MixerInputTypes.MIXER_INPUT_SECONDARY)
     test.play("/tmp/audioTest.mp3")
 
     # Read and print the output
