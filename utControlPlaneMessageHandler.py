@@ -28,7 +28,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path+"/../../../")
 
 from submodules.vdevice_message_sender import VDeviceMessageSender
-from submodules.ir import IR
+from submodules.ir import irHandler
 
 class ControlPlane:    
     """
@@ -57,8 +57,9 @@ class ControlPlane:
             self.config = config
 
             # Initialize device-specific subclasses for physical devices
+            # TODO: Add extra modules as required to support extended decoding of messages.
             self.handlers = {
-                "IR": IR(),
+                "IR": irHandler(),
                 #"HDMICEC": HDMICEC(),
                 #"Power": Power(),
                 #"DeepSleep": DeepSleep()

@@ -56,6 +56,8 @@ class VDeviceMessageSender:
             raise ValueError(f"Unsupported command: {command}")
 
         # Connect to the WebSocket and send the command
+        # TODO: Upgrade this to extract the data target information from the config passed.
+        # The config will specify the IP destination and port to which the device is connected for sending messages.
         ws_url = f"ws://localhost:{self.ws_port}"
         ws = websocket.create_connection(ws_url)
         print(f"Sending vDevice command '{command}' to WebSocket at {ws_url}")

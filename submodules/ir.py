@@ -21,7 +21,7 @@
 # *
 #* ******************************************************************************
 
-class IR:
+class irHandler:
     """
     Handles processing and executing IR (Infrared) commands.
     It simulates or interfaces with an IR blaster to send commands based on the provided parameters.
@@ -56,6 +56,9 @@ class IR:
             print(f"  Repeat: {repeat}")
 
             # Implement IR command logic here
+            # TODO: Replace with the IR module from RAFT
+            # Follow the message format from here:
+            # https://github.com/rdkcentral/ut-raft/wiki/Control-Plane-Message-Format
             self.send_ir_signal(command, delay, repeat)
         else:
             print("No valid command found in the message.")
