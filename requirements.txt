@@ -1,1 +1,2 @@
 pexpect==4.9.0
+websocket==0.2.1
