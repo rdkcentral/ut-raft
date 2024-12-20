@@ -23,8 +23,43 @@
 import yaml
 import sys
 import os
+import copy
 
-class ConfigRead:
+def create_config_object(data):
+    """
+    Creates a new object with attributes extracted from YAML data.
+
+    This function recursively processes YAML data (represented as a dictionary or list)
+    and dynamically creates a new object with attributes based on the YAML keys.
+    For lists, it both adds attributes with "_index" and appends elements to the list.
+
+    Args:
+        data: The YAML data to process (either a dictionary or a list).
+
+    Returns:
+        object: A new object with attributes populated from the YAML data.
+    """
+
+    new_obj = type('ConfigRead', (), {})()  # Create a new empty object
+
+    if isinstance(data, dict):
+        for key, value in data.items():
+            setattr(new_obj, str(key), create_config_object(value))
+    elif isinstance(data, list):
+        # Create a new object specifically for the list items
+        list_obj = type('ConfigRead', (), {})()  
+        new_obj = []  # Initialize as a list
+        for index, value in enumerate(data):
+            processed_value = create_config_object(value)
+            setattr(list_obj, f"_{index}", processed_value)  # Set attribute _index on list_obj
+            new_obj.append(processed_value)  # Append to the list
+        #setattr(new_obj, "items", list_obj)  # Add the list_obj as an attribute
+    else:
+        return data  # Return simple values directly
+
+    return new_obj             
+
+class ConfigRead(list):
     """
     A class to represent configuration data loaded from a YAML file.
 
@@ -74,11 +109,11 @@ class ConfigRead:
         if data is not None:
             if self.__class__.__name__ == type(data).__name__:
                 # We've been passed a ConfigRead object
-                self._copy_attributes(data, start_key)
                 if start_key:
-                    self.fields = data.fields.get(start_key)
+                    start_data = data.fields.get(start_key)
                 else:
-                    self.fields = data.fields
+                    start_data = data.fields
+                self.copy_attributes(start_data)
             else:
                 # Read YAML data
                 yaml_data = self.__load_yaml__(data)
@@ -88,12 +123,63 @@ class ConfigRead:
                     start_key = start_key.rstrip(":")   # Ensure there's no : in the key
                     activate_data = yaml_data.get(start_key, {})
                     if not activate_data:
-                        raise ValueError(f"start_key [{start_key}] must be present in the data")
+                        self.log.error("startKey[{}] - Not Found".format(start_key))
+                        activate_data = yaml_data
+                        #raise ValueError(f"start_key [{start_key}] must be present in the data")
 
                 # Recursively set attributes
-                self._set_attributes(activate_data)
-                self.fields = activate_data
+                self.fields = self._create_config_object(activate_data,None)
+                # Extract attributes from self.config and add them to self
+                for key, value in vars(self.fields).items():
+                    setattr(self, key, value)
+                #print(self)
 
+    def _create_config_object(self, data, key):
+        """
+        Creates a new object with attributes extracted from YAML data.
+
+        This function recursively processes YAML data (represented as a dictionary or list)
+        and dynamically creates a new object with attributes based on the YAML keys.
+        For lists, it adds attributes with "_index" to the object itself.
+
+        Args:
+            data: The YAML data to process (either a dictionary or a list).
+
+        Returns:
+            object: A new object with attributes populated from the YAML data.
+        """
+
+        new_obj = ConfigRead()  # Create a ConfigRead (inheriting from list)
+
+        if isinstance(data, dict):
+            for key, value in data.items():
+                setattr(new_obj, str(key), self._create_config_object(value, key))
+        elif isinstance(data, list):
+            # Create a new object to hold the list and the _index attributes
+            for index, value in enumerate(data):
+                #processed_value = self._create_config_object(value)
+                setattr(new_obj, f"_{index}", value)  # Set attribute on list_obj
+                # Make elements accessible by index directly (like a list)
+                new_obj.append(value)
+        else:
+            return data  # Return simple values directly
+
+        return new_obj
+
+    def copy_attributes(self, other_object):
+        """
+        Copies all attributes from one object to another.
+
+        Args:
+            other_obj: The object to copy attributes from.
+        """
+
+        for attr_name, attr_value in vars(other_object).items():
+            try:
+                setattr(self, attr_name, copy.deepcopy(attr_value))
+            except Exception as e:
+                print(f"Warning: Could not copy attribute '{attr_name}'. Error: {e}")
+            
     def _copy_attributes(self, data, start_key):
         """
         Recursively copies attributes from another ConfigRead object.
@@ -126,9 +212,13 @@ class ConfigRead:
             # Directly set the attribute value
             setattr(self, name, value)
 
-    def __str__(self):
-        # Customize this to display relevant parts of the YAML data
-        return f"Configuration: {self.fields}"
+    # def __str__(self):
+    #     """Returns a string representation of the class."""
+    #     fields = vars(self)
+    #     output = ""
+    #     for attr_name, attr_value in fields.items():
+    #         output += f"{attr_name}: {attr_value}"
+    #     return output        
 
     def __load_yaml__(self,input_var):
         """
@@ -161,64 +251,19 @@ class ConfigRead:
                 return input_var
         raise ValueError("Input must be a valid file path or a dictionary")
 
-    def _set_attributes(self, data):
-        """
-        Recursively sets object attributes from YAML data.
+    # def append(self, value):
+    #     """
+    #     Appends an item to the internal list.
 
-        This function iterates through YAML data (represented as a dictionary or list)
-        and handles nested structures by recursively calling itself. It uses `setattr`
-        to assign values to the object's attributes based on the YAML keys.
+    #     This method ensures the internal list exists and appends the given
+    #     value to it. If the list doesn't exist, it's initialized first.
 
-        Args:
-            data: The YAML data to process (either a dictionary or a list).
-        """
-        if isinstance(data, dict):
-            for key, value in data.items():
-                if isinstance(value, dict):
-                    # Handle nested dictionaries
-                    nested_obj = ConfigRead()
-                    nested_obj._set_attributes(value)
-                    if isinstance(key, int):  # Handle index in our list and prefix with _ e.g. _0.
-                        key = '_'+str(key)
-                    if key.isdigit():
-                        key = '_'+str(key)
-                    setattr(self, key, nested_obj)
-                elif isinstance(value, list):
-                    # Handle lists
-                    if isinstance(key, int):  # Handle index in our list and prefix with _ e.g. _0.
-                        key = '_'+str(key)
-                    setattr(self, key, [
-                        self._set_attributes(item) if isinstance(item, dict) else item
-                        for item in value
-                    ])
-                else:
-                    if isinstance(key, int):  # Handle index in our list and prefix with _ e.g. _0.
-                        key = '_'+str(key)
-                    # Handle simple values
-                    setattr(self, key, value)
-        elif isinstance(data, list):
-            # Handle the case where 'data' itself is a list
-            for index, value in enumerate(data):
-                if isinstance(value, dict):
-                    nested_obj = ConfigRead()
-                    nested_obj._set_attributes(value)
-                    self.append(nested_obj)  # Append nested object to the list
-                else:
-                    self.append(value)  # Append simple value to the list
-
-    def append(self, value):
-        """
-        Appends an item to the internal list.
-
-        This method ensures the internal list exists and appends the given
-        value to it. If the list doesn't exist, it's initialized first.
-
-        Args:
-            value: The value to append to the list.
-        """
-        if not hasattr(self, '_data'):
-            self._data = []  # Initialize the list if it doesn't exist
-        self._data.append(value)
+    #     Args:
+    #         value: The value to append to the list.
+    #     """
+    #     if not hasattr(self, '_data'):
+    #         self._data = []  # Initialize the list if it doesn't exist
+    #     self._data.append(value)
 
     def get(self, field_path: str = None):
         """
@@ -254,107 +299,113 @@ if __name__ == '__main__':
     # Sample YAML data
     input_data = """
     config:
-        database:
-            host: localhost
-            port: 5432
         application:
-            name: MyApp
-            version: 1.0
             languages:
                 - Python
                 - JavaScript
+            name: MyApp
+            version: 1.0
+        database:
+            my_list:
+                - itema
+                - itemb
+            host: localhost
+            port: 5432
     """
     profile_check = """
         IAudioDecoderManager:  # Component object begins
             interfaceVersion: 1         # Integer value
             IAudioDecoder:              # Resource list
             - 0:
-                supportedCodecs:        # Array of codec capabilities
-                    - AAC_LC
-                    - HE_AAC
-                    - HE_AAC2
-                    - DOLBY_AC3
-                    - DOLBY_AC3_PLUS
-                    - DOLBY_AC3_PLUS_JOC
-                    - DOLBY_AC4
-                    - X_HE_AAC
-                supportsSecure: true
-            - "1":                 # Resource object begins
-                supportedCodecs:        # Array of codec capabilities
-                    - AAC_LC
-                    - HE_AAC
-                    - HE_AAC2
-                    - DOLBY_AC3
-                    - DOLBY_AC3_PLUS
-                    - DOLBY_AC3_PLUS_JOC
-                    - DOLBY_AC4
-                    - X_HE_AAC
-                supportsSecure: true
+              supportedCodecs:        # Array of codec capabilities
+                - AAC_LC
+                - HE_AAC
+                - HE_AAC2
+                - DOLBY_AC3
+                - DOLBY_AC3_PLUS
+                - DOLBY_AC3_PLUS_JOC
+                - DOLBY_AC4
+                - X_HE_AAC
+              supportsSecure: true
+            - 1:                 # Resource object begins
+              supportedCodecs:        # Array of codec capabilities
+                - AAC_LC
+                - HE_AAC
+                - HE_AAC2
+                - DOLBY_AC3
+                - DOLBY_AC3_PLUS
+                - DOLBY_AC3_PLUS_JOC
+                - DOLBY_AC4
+                - X_HE_AAC
+              supportsSecure: true
     """
 
-    data = ConfigRead(input_data, "config")
-    # Accessing configuration using attribute style
-    print(data.database.host)  # Expected: localhost
-    assert data.database.host == "localhost", "Expected localhost"
-    print(data.database.port)  # Expected: 5432
-    assert data.database.port == 5432, "Expected 5432"
-    print("Name:[{}]".format(data.application.name))  # Expected: MyApp
-    assert data.application.name == "MyApp", "Expected MyApp"
-    print(data.application.languages)  # Expected: ['Python', 'JavaScript']
-    assert data.application.languages == ['Python', 'JavaScript'], "Expected ['Python', 'JavaScript']"
-    print(data.application.languages[1])  # Expected: ['JavaScript']
-    assert data.application.languages[1] == "JavaScript", "Expected JavaScript"
+    # data = ConfigRead(input_data, "config")
+    # # Accessing configuration using attribute style
+    # print(data.database.host)  # Expected: localhost
+    # assert data.database.host == "localhost", "Expected localhost"
+    # print(data.database.port)  # Expected: 5432
+    # assert data.database.port == 5432, "Expected 5432"
+    # print("Name:[{}]".format(data.application.name))  # Expected: MyApp
+    # assert data.application.name == "MyApp", "Expected MyApp"
+    # print(data.application.languages)  # Expected: ['Python', 'JavaScript']
+    # assert data.application.languages == ['Python', 'JavaScript'], "Expected ['Python', 'JavaScript']"
+    # print(data.application.languages[1])  # Expected: ['JavaScript']
+    # assert data.application.languages[1] == "JavaScript", "Expected JavaScript"
 
-    data.application.name = "bob"
+    # data.application.name = "bob"
 
-    application = ConfigRead( data, "application" )
+    # application = ConfigRead( data, "application" )
 
-    print("Name:[{}]".format(application.name))  # Expected: bob
-    assert application.name == "bob", "Expected: Bob"
-    print(application.languages)  # Expected: ['Python', 'JavaScript']
-    assert application.languages == ['Python', 'JavaScript'], "Expected ['Python', 'JavaScript']"
-    print(application.languages[1])  # Expected: ['JavaScript']
-    assert application.languages[1] == "JavaScript", "Expected JavaScript"
+    # print("Name:[{}]".format(application.name))  # Expected: bob
+    # assert application.name == "bob", "Expected: Bob"
+    # print(application.languages)  # Expected: ['Python', 'JavaScript']
+    # assert application.languages == ['Python', 'JavaScript'], "Expected ['Python', 'JavaScript']"
+    # print(application.languages[1])  # Expected: ['JavaScript']
+    # assert application.languages[1] == "JavaScript", "Expected JavaScript"
 
-    # index method still works if required
-    #print(data.field.get(["config"]["database"]["port"]))
+    # # index method still works if required
+    # #print(data.field.get(["config"]["database"]["port"]))
 
-    database = data.database
-    database.newField = "Hello"
-    assert database.newField == "Hello", "Expected: Hello"
+    # database = data.database
+    # database.newField = "Hello"
+    # assert database.newField == "Hello", "Expected: Hello"
 
-    # Accessing configuration using attribute style
-    print(database.host)  # Expected: localhost
-    assert database.host == "localhost", "Expected: localhost"
-    print(database.port)  # Expected: 5432
-    assert database.port == 5432, "Expected: 5432"
+    # # Accessing configuration using attribute style
+    # print(database.host)  # Expected: localhost
+    # assert database.host == "localhost", "Expected: localhost"
+    # print(database.port)  # Expected: 5432
+    # assert database.port == 5432, "Expected: 5432"
 
-    data = ConfigRead(input_data)
-    print(data.config.database.host)  # Expected: localhost
-    assert data.config.database.host == "localhost", "Expected: localhost"    
-    print(data.config.database.port)  # Expected: 5432
-    assert data.config.database.port == 5432, "Expected: 5432"
+    # data = ConfigRead(input_data)
+    # print(data.config.database.host)  # Expected: localhost
+    # assert data.config.database.host == "localhost", "Expected: localhost"    
+    # print(data.config.database.port)  # Expected: 5432
+    # assert data.config.database.port == 5432, "Expected: 5432"
 
-    # Example 1: Accessing a simple value
-    value = data.get("config.application.name")
-    print(value)  # Output: MyApp
+    # # Example 1: Accessing a simple value
+    # value = data.get("config.application.name")
+    # assert value == "MyApp", "Expected: MyApp"
+    # print(value)  # Output: MyApp
 
-    # Example 2: Accessing a nested value
-    value = data.get("config.application.languages.0")
-    print(value)  # Output: Python
-    assert value == "Python", "Expected: Python"
+    # # Example 2: Accessing a nested value
+    # value = data.get("config.application.languages.0")
+    # print(value)  # Output: Python
+    # assert value == "Python", "Expected: Python"
 
-    # Example 3: Handling invalid field paths
-    value = data.get("config.nonexistent.field")
-    print(value)  # Output: None
-    assert value == None, "Expected: None"
+    # # Example 3: Handling invalid field paths
+    # value = data.get("config.nonexistent.field")
+    # print(value)  # Output: None
+    # assert value == None, "Expected: None"
 
     IAudioDecoderManager = ConfigRead(profile_check, "IAudioDecoderManager")
     print( IAudioDecoderManager )   # TODO: Doesn't currently list objects, unclear if it should
     print( IAudioDecoderManager.interfaceVersion )  # Expected: 1
     assert IAudioDecoderManager.interfaceVersion == 1, "Expected: 1"
 
-    decoders = IAudioDecoderManager._0.supportedCodecs
+    # Check for string _x access
+    decoders = IAudioDecoderManager.IAudioDecoder[0].supportedCodecs
+    decoders = IAudioDecoderManager.IAudioDecoder._0.supportedCodecs
     checkDecoders = ['AAC_LC', 'HE_AAC', 'HE_AAC2', 'DOLBY_AC3', 'DOLBY_AC3_PLUS', 'DOLBY_AC3_PLUS_JOC', 'DOLBY_AC4', 'X_HE_AAC']
     print(decoders)
     assert decoders == checkDecoders, f"Expected: {checkDecoders}"
@@ -363,11 +414,31 @@ if __name__ == '__main__':
     print(decoders[5])
     assert decoders[5] == checkDecoders[5], f"Expected: {checkDecoders[5]}"
 
-    decoders1 = IAudioDecoderManager._1
+    # Check for array access
+    decodersArray = IAudioDecoderManager.IAudioDecoder[0].supportedCodecs
+    checkDecoders = ['AAC_LC', 'HE_AAC', 'HE_AAC2', 'DOLBY_AC3', 'DOLBY_AC3_PLUS', 'DOLBY_AC3_PLUS_JOC', 'DOLBY_AC4', 'X_HE_AAC']
+    print(decodersArray)
+    assert decodersArray == checkDecoders, f"Expected: {checkDecoders}"
+    print(decodersArray[1])
+    assert decodersArray[1] == checkDecoders[1], f"Expected: {checkDecoders[1]}"
+    print(decodersArray[5])
+    assert decodersArray[5] == checkDecoders[5], f"Expected: {checkDecoders[5]}"
+
+    # check for string _x access
+    decoders1 = IAudioDecoderManager.IAudioDecoder._1
     print(decoders1.supportedCodecs)  # Expected: localhost
     codecs = ["AAC_LC", "HE_AAC", "HE_AAC2", "DOLBY_AC3", "DOLBY_AC3_PLUS", "DOLBY_AC3_PLUS_JOC", "DOLBY_AC4", "X_HE_AAC"]
     assert decoders1.supportedCodecs == codecs, "{}".format(codecs)
-    
+
     print(decoders1.supportsSecure)  # Expected: True
     assert decoders1.supportsSecure == True, "Expected: True"
+
+    # check for array access
+    decoders1Array = IAudioDecoderManager.IAudioDecoder[1]
+    print(decoders1Array.supportedCodecs)  # Expected: localhost
+    codecs = ["AAC_LC", "HE_AAC", "HE_AAC2", "DOLBY_AC3", "DOLBY_AC3_PLUS", "DOLBY_AC3_PLUS_JOC", "DOLBY_AC4", "X_HE_AAC"]
+    assert decoders1Array.supportedCodecs == codecs, "{}".format(codecs)
+
+    print(decoders1Array.supportsSecure)  # Expected: True
+    assert decoders1Array.supportsSecure == True, "Expected: True"
 

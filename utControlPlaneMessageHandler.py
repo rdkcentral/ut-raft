@@ -28,7 +28,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path+"/../../../")
 
 from submodules.vdevice_message_sender import VDeviceMessageSender
-from submodules.ir import irHandler
+from plugins.ut_raft.submodules.remoteHanlder import irHandler
 
 class ControlPlane:    
     """
@@ -50,21 +50,8 @@ class ControlPlane:
             handlers (dict): Dictionary of device handlers for physical devices.
             vdevice_sender (VDeviceMessageSender): Instance for handling virtual device messages if `virtualConfig` is provided.
         """
-        self.config = None
-        self.virtualConfig = None
-
-        if config is not None:
-            self.config = config
-
-            # Initialize device-specific subclasses for physical devices
-            # TODO: Add extra modules as required to support extended decoding of messages.
-            self.handlers = {
-                "IR": irHandler(),
-                #"HDMICEC": HDMICEC(),
-                #"Power": Power(),
-                #"DeepSleep": DeepSleep()
-            }
-        
+        self.config = config
+      
         if virtualConfig is not None:
             self.virtualConfig = virtualConfig
             self.vdevice_sender = VDeviceMessageSender(virtualConfig)
@@ -109,18 +96,17 @@ if __name__ == "__main__":
         control_plane = ControlPlane(config=config)
 
         # Example message for IR Blaster command
-        message_yaml_ir = """
-        IR:
-          command: PowerOn
-          delay: 2
-          repeat: 3
-          randomRepeat: 1
-          target_device: DUT
-          code: "NUM_0"
+        message_yaml_remote = """
+        remote:
+            map: "linux"
+            - event: 
+                key: "KEY_LEFT" 
+            - event:
+                key: "KEY_RIGHT"
+                delay: 1
         """
-        print("Testing IR Blaster Command:") 
-        control_plane.process_message(message_yaml_ir)
-
+        print("Testing remote command:") 
+        control_plane.process_message(message_yaml_remote)
         
         # Example message for HDMI command
         message_yaml_hdmi = """
