@@ -52,3 +52,13 @@ realtek:
     stop_command: "\x03" # CNTRL-C
     primary_mixer_input_config: ""
     secondary_mixer_input_config: ""
+mediatek:
+  gstreamer:
+    prerequisites:
+      - export XDG_RUNTIME_DIR="/tmp"
+      - export LD_PRELOAD=libwesteros_gl.so.0.0.0
+      - export WAYLAND_DISPLAY=wayland-0
+      - westeros-init &
+    play_command: gst-play-1.0
+    stop_command: "\x03" # CNTRL-C
+    primary_mixer_input_config: ""
