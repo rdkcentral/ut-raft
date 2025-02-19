@@ -321,8 +321,7 @@ class UTSuiteNavigatorClass:
                 found = True
                 break
         if not found:
-            self.log.error("Suite:[{}] Test:[{}] Not Found".format(suite_name, test_name))
-            return None
+            self.log.info("Suite:[{}] Test:[{}] Not Found Run all Test with r option".format(suite_name, test_name))
 
         result = self.framework.select( suite_name, test_name, promptWithAnswers )
 
@@ -335,6 +334,10 @@ class UTSuiteNavigatorClass:
 
     def stop(self):
         self.framework.stop()
+
+    def collect_results(self, output):
+        results = self.framework.collect_results( output )
+        return results
 
     def run(self, suite_name, test_name=None):
         """
