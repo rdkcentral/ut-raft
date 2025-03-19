@@ -85,13 +85,14 @@ class utCFramework:
         self.log.debug(result)
         return result
 
-    def select(self, suite_name: str, test_name:str = None, promptWithAnswers: list = None ):
+    def select(self, suite_name: str, test_name:str = None, promptWithAnswers: list = None, timeout:int = 10):
         """select a test from the suite to execute and wait for Prompt
 
         Args:
             suite_name (str): suite to select
             test_name (str, optional): test_name within the suite to select. Defaults to None, whole suite will be ran
             input (bool, optional): if set to true then don't wait on last prompt
+            timeout (int): Time limit before timing out, in seconds. Defaults to 10 seconds.
 
         Raises:
             ValueError: Suite {suite_name} not found the suite configuration
@@ -124,7 +125,7 @@ class utCFramework:
         if test_name is None:
             # Run the Suite of tests
             self.session.write("r")
-            output = self.session.read_until(self.commandPrompt)
+            output = self.session.read_until(self.commandPrompt, timeout)
             self.log.debug(output)
         else:
             # Run the specific test
@@ -147,7 +148,7 @@ class utCFramework:
                 output = self.inputPrompts( promptWithAnswers )
 
             # Wait for the command prompt if there's no other input required
-            output += self.session.read_until(self.commandPrompt)
+            output += self.session.read_until(self.commandPrompt, timeout)
 
             self.log.debug(output)
         return output
@@ -286,13 +287,14 @@ class UTSuiteNavigatorClass:
         else:
             self.log.error("Invalid Menu Type Configuration :{}".format(test_type))
 
-    def select(self, suite_name: str, test_name:str = None, promptWithAnswers:dict = None ):
+    def select(self, suite_name: str, test_name:str = None, promptWithAnswers:dict = None, timeout:int = 10):
         """Select a menu from an already running system
 
         Args:
             suite_name (str): Suite Name
             test_id (str): Test name or None for the whole suite
             input (list optional): list of input values
+            timeout (int): Time limit before timing out, in seconds. Defaults to 10 seconds.
 
         Raises:
             ValueError: not found in the menu configuration
@@ -323,7 +325,7 @@ class UTSuiteNavigatorClass:
         if not found:
             self.log.info("Suite:[{}] Test:[{}] Not Found Run all Test with r option".format(suite_name, test_name))
 
-        result = self.framework.select( suite_name, test_name, promptWithAnswers )
+        result = self.framework.select( suite_name, test_name, promptWithAnswers, timeout )
 
         return result
 
