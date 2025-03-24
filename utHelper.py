@@ -22,8 +22,9 @@
 #* ******************************************************************************
 import os
 import sys
-import subprocess
-import time
+import logging
+import csv
+import re
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path+"/../../../")
@@ -65,6 +66,59 @@ class utHelperClass(testController):
         if not isBoxUP:
             self.log.step("ping is failed")  # Log if the ping fails
         return True  # Always returns True, even if the ping failed
+
+    def dump_stepResults(self, input_file, output_file):
+        """
+        This function dumps the step results in csv file.
+
+        Args:
+            input_file (str): input file.
+            output_file (str): output file.
+
+        Returns:
+            None
+        """
+        parsed_results = []
+        # Regex pattern to extract step number, result, test suite, and test case
+        pattern = re.compile(r"STEP_RESULT\s*:\s*\[(\d+)\]:\s*RESULT\s*:\s*\[(\w+)\]:\s*Test Suit:\s*(.*?)\s*Test Case:\s*(.*)")
+
+        try:
+            with open(input_file, 'r') as input_file_handler:
+                for line in input_file_handler:
+                    match = pattern.search(line)
+                    if match:
+                        step_number = match.group(1)
+                        result = match.group(2)
+                        test_suite = match.group(3)
+                        test_case = match.group(4)
+                        parsed_results.append([step_number, test_suite, test_case, result])
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+
+        try:
+            with open(output_file, mode="w", newline="", encoding="utf-8") as file:
+                writer = csv.writer(file)
+                writer.writerow(["Step Number", "Test Suite", "Test Case", "Result"])
+                writer.writerows(parsed_results)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+
+    def testEndFunction(self, powerOff=True):
+        """Close device sessions and release test resources.
+           Test Controller override function
+
+        Args:
+            powerOff (bool, optional): Whether to power off after the test. Defaults to True.
+
+        Returns:
+            bool: True if cleanup succeeds, False otherwise.
+        """
+        super().testEndFunction(False)
+        if self.log:
+            output_dir = os.path.dirname(self.log.logFile.baseFilename)
+            output_file = os.path.join(output_dir, "step_summery.csv")
+            self.dump_stepResults(self.log.logFile.baseFilename, output_file)
+        return True
 
     def reboot(self, commandLine=False):
         """
