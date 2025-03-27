@@ -81,7 +81,7 @@ class utCFramework:
         """
         # Quit from any menu we're in
         self.session.write("q")
-        result = self.session.read_all()
+        result = self.session.read_until("#")
         self.log.debug(result)
         return result
 
