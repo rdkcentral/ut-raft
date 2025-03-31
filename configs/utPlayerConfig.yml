@@ -62,3 +62,4 @@ mediatek:
     play_command: gst-play-1.0
     stop_command: "\x03" # CNTRL-C
     primary_mixer_input_config: ""
+    secondary_mixer_input_config: ""
