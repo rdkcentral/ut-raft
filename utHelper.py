@@ -188,17 +188,18 @@ class utHelperClass(testController):
         session.write("chmod " + permission + " " + path + "*")  # Send the 'chmod' command
         session.write("\n")  # Send a newline
 
-    def copyFileFromHost(self, sourcePath, destinationPath, targetDevice="dut"):
+    def copyFileFromHost(self, sourcePath, destinationPath, targetDevice="dut", use_sftp=False):
         """
-        Copies a file from the host machine to the target device using SCP (for SSH connections).
+        Copies a file from the host machine to the target device using SCP or SFTP.
 
         Args:
             sourcePath (str): The source path and filename on the host.
             destinationPath (str): The destination path and filename on the device.
-            device (str, optional): The device to copy the file to (default: "dut").
+            targetDevice (str, optional): The device to copy the file to (default: "dut").
+            use_sftp (bool, optional): If True, uses SFTP instead of SCP (default: False).
 
         Returns:
-            str: The message from the subprocess (SCP output).
+            str: The message from the copy operation.
 
         Raises:
             ValueError: If the session type is not "ssh".
@@ -209,21 +210,27 @@ class utHelperClass(testController):
         if activeDevice.session.type == "ssh":
             self.log.stepMessage("copyFile(" + sourcePath + ", (" + destinationPath + ")")
 
-            message = self.baseUtils.scpCopy(activeDevice.session, sourcePath, destinationPath)
+            if use_sftp:
+                message = self.baseUtils.sftpCopy(activeDevice.session, sourcePath, destinationPath)
+            else:
+                message = self.baseUtils.scpCopy(activeDevice.session, sourcePath, destinationPath)
         else:
             # self.writeMessageToDeviceSession("cp " + source + " " + destination)  # Commented out code, potentially for serial copy
             self.log.error("Can't copy for this session type")
-            raise ValueError("Copying files is not supported for connections.")
+            raise ValueError("Copying files is not supported for this connection type.")
 
         return message
 
+
     # Session Command operations
-    def writeCommands(self, commands: str, session:object=None):
+    def writeCommands(self, commands: str, session: object = None, logOutput: bool = True):
         """
         Executes a command on the session
 
         Args:
-            command (list): The command list execute.
+            commands (str): The multi-line command string to execute.
+            session (object, optional): The session object to use. Defaults to self.session.
+            isLoggingRequired (bool, optional): Flag to control logging. Defaults to True.
 
         Returns:
             str: The output/result of the command execution.
@@ -232,25 +239,27 @@ class utHelperClass(testController):
         if session is None:
             session = self.session
 
-        # Flush the buffer by reading it all
-        output = session.read_all()
-        self.log.debug( output )
-
-        # Split the data into lines
-        lines = commands.splitlines()
-
-        # Filter out empty lines and extract commands
-        strippedCommands = [line.strip() for line in lines if line.strip()]
         result = ""
+
+        if logOutput:
+            output = session.read_all()
+            self.log.info(output)
+
+        # Split the data into lines and filter empty ones
+        strippedCommands = [line.strip() for line in commands.splitlines() if line.strip()]
+
         for cmd in strippedCommands:
             session.write(cmd)
-            #TODO: Upgrade the session class to know it's prompt, then we should wait for prompt
-            #TODO: This function should move to the session class
-            output = session.read_all()
-            self.log.debug( output )
-            result += output
-            #result += self.syscmd(cmd)  # Execute the command using syscmd (assuming it's defined elsewhere)
+             #TODO: Upgrade the session class to know it's prompt, then we should wait for prompt
+             #TODO: This function should move to the session class
+            if logOutput:
+                output = session.read_all()
+                self.log.info(output)
+                result += output
+                #result += self.syscmd(cmd)  # Execute the command using syscmd (assuming it's defined elsewhere)
+
         return result
+
 
     def writeCommandsOnPrompt(self, commands:list, prompt:str=None, session:object=None):
         """
@@ -383,17 +392,19 @@ class utHelperClass(testController):
             for writeString in inputLog:
                 fileHandle.write(writeString + "\n")
 
-    def downloadToDevice(self, urls: list, target_directory: str, device: str="dut" ):
+    def downloadToDevice(self, urls: list, target_directory: str, device: str="dut", use_sftp: bool=False):
         """
         Download the file and copy to device directory.
 
         Args:
-            url (str): url path.
+            urls (list): list of URL paths.
             target_directory (str): target directory on device.
-            device (str) : device name ( default: "dut" )
+            device (str): device name (default: "dut").
+            use_sftp (bool): use SFTP instead of SCP for file transfer (default: False).
         """
         self.log.debug("urls( url:'{}' )".format(urls))
         self.log.debug("target_directory( target_directory:'{}' )".format(target_directory))
+        self.log.debug("use_sftp: {}".format(use_sftp))
 
         for url in urls:
             # Download a file into the workspace on the host
@@ -402,21 +413,27 @@ class utHelperClass(testController):
             if hasattr(self, 'outboundClient'):
                 self.outboundClient.downloadFile(url)
                 workspace_directory = self.outboundClient.workspaceDirectory
-                self.copyFileFromHost(os.path.join(workspace_directory, file_name), target_directory, targetDevice=device)
+                self.copyFileFromHost(
+                    os.path.join(workspace_directory, file_name),
+                    target_directory,
+                    targetDevice=device,
+                    use_sftp=use_sftp
+                )
             else:
                 self.log.error("outboundClient not present")
 
-    def deleteFromDevice(self, files: list, device: str="dut" ):
+    def deleteFromDevice(self, files: list, device: str = "dut", logOutput: bool = True):
         """
-        Deletes the file from device
+        Deletes the file(s) from the device.
 
         Args:
-            files (list:str): list of file paths to delete.
-            device (str) : device name ( default: "dut" )
+            files (list[str]): List of file paths to delete.
+            device (str): Device name (default: "dut").
+            logOutput (bool): Whether to log command output (default: True).
         """
         for file in files:
             cmd = "rm -rf " + file
-            self.writeCommands(cmd)
+            self.writeCommands(cmd, session=None, logOutput=logOutput)
 
 # Test and example usage code
 if __name__ == '__main__':

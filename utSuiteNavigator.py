@@ -85,28 +85,30 @@ class utCFramework:
         self.log.debug(result)
         return result
 
-    def select(self, suite_name: str, test_name:str = None, promptWithAnswers: list = None, timeout:int = 10):
-        """select a test from the suite to execute and wait for Prompt
+    def select(self, suite_name: str, test_name: str = None, promptWithAnswers: list = None, timeout: int = 10, is_cunit: bool = True):
+        """
+        Select a test from the suite to execute and wait for Prompt.
 
         Args:
-            suite_name (str): suite to select
-            test_name (str, optional): test_name within the suite to select. Defaults to None, whole suite will be ran
-            input (bool, optional): if set to true then don't wait on last prompt
+            suite_name (str): Suite to select.
+            test_name (str, optional): Test name within the suite to select. Defaults to None; whole suite will be run.
+            promptWithAnswers (list, optional): List of input prompts and responses to handle during test execution.
             timeout (int): Time limit before timing out, in seconds. Defaults to 10 seconds.
+            is_cunit (bool): Set to True if running CUnit tests; False for GTest. Controls initial menu navigation.
 
         Raises:
-            ValueError: Suite {suite_name} not found the suite configuration
-            ValueError: Test {test_name} not found in suite
+            ValueError: If the suite or test name is not found.
 
         Returns:
-            str: output from the framework
+            str: Output from the framework.
         """
 
-        # Ensure we're at the top menu
-        self.session.write("x")
+        # Ensure we're at the top menu depending on the framework
+        self.session.write("x" if is_cunit else "m")
         self.session.write("u")
         output = self.session.read_until(self.commandPrompt)
         self.log.debug(output)
+
         self.session.write("s")
         output = self.session.read_until(self.selectPrompt)
         self.log.debug(output)
@@ -123,7 +125,7 @@ class utCFramework:
         self.log.debug(output)
 
         if test_name is None:
-            # Run the Suite of tests
+            # Run the suite of tests
             self.session.write("r")
             output = self.session.read_until(self.commandPrompt, timeout)
             self.log.debug(output)
@@ -140,17 +142,16 @@ class utCFramework:
                 raise ValueError(f"Test [{test_name}] not found in the suite.")
 
             self.log.info(f"Found test: [{test_name}] @ [{test_index}]")
-            # Run the specific test
             self.session.write(str(test_index))
 
-            # If Input is present we need to then wait on them
+            # If input prompts are present, handle them
             if promptWithAnswers is not None:
-                output = self.inputPrompts( promptWithAnswers )
+                output = self.inputPrompts(promptWithAnswers)
 
-            # Wait for the command prompt if there's no other input required
-            output += self.session.read_until(self.commandPrompt, timeout)
-
+            # Wait for the command prompt (final output)
+            output = self.session.read_until(self.commandPrompt, timeout)
             self.log.debug(output)
+
         return output
 
     def inputPrompts(self, promptsWithAnswers: dict):
@@ -287,28 +288,34 @@ class UTSuiteNavigatorClass:
         else:
             self.log.error("Invalid Menu Type Configuration :{}".format(test_type))
 
-    def select(self, suite_name: str, test_name:str = None, promptWithAnswers:dict = None, timeout:int = 10):
-        """Select a menu from an already running system
+    def select(self, suite_name: str, test_name: str = None, promptWithAnswers: dict = None, timeout: int = 10, is_cunit: bool = True):
+        """
+        Select a menu from an already running system.
 
         Args:
-            suite_name (str): Suite Name
-            test_id (str): Test name or None for the whole suite
-            input (list optional): list of input values
+            suite_name (str): Suite Name.
+            test_name (str): Test name or None for the whole suite.
+            promptWithAnswers (dict, optional): Dictionary of input prompts and responses.
             timeout (int): Time limit before timing out, in seconds. Defaults to 10 seconds.
+            is_cunit (bool): Set to True if running a CUnit-based test. Defaults to False.
 
         Raises:
-            ValueError: not found in the menu configuration
-            ValueError: not found in the suite_name
+            ValueError: If test or suite name is not found in the configuration.
+
+        Returns:
+            str: Output from the framework.
         """
         # 1. Find the suite name from the configuration
         test_section = self.config.fields.get('test')
         if not test_section:
             self.log.error("Invalid Format [test:] section not found")
             return None
+
         suite_list = test_section.get('suites')
         if not suite_list:
             self.log.error("Invalid Format [suites:] section not found")
             return None
+
         found = False
         # Just validate that the test is in the expected list
         for index in suite_list:
@@ -316,16 +323,19 @@ class UTSuiteNavigatorClass:
             if not suite:
                 self.log.error("Invalid Format [suites.<index>]")
                 return None
+
             testsList = suite.get("tests")
             if not testsList:
                 continue
+
             if test_name in testsList:
                 found = True
                 break
-        if not found:
-            self.log.info("Suite:[{}] Test:[{}] Not Found Run all Test with r option".format(suite_name, test_name))
 
-        result = self.framework.select( suite_name, test_name, promptWithAnswers, timeout )
+        if not found:
+            self.log.info("Suite:[{}] Test:[{}] Not Found. Run all tests with 'r' option.".format(suite_name, test_name))
+
+        result = self.framework.select(suite_name, test_name, promptWithAnswers, timeout, is_cunit)
 
         return result
 
