@@ -271,6 +271,50 @@ class utBaseUtils():
             self.log.error(f"Failed to change directory. Output:\n{output}")
             return False
 
+    def restart_process_by_name(self, session, process_name, binary_dir="/usr/bin"):
+        """
+        Kills and restarts a process on the remote device via SSH.
+
+        Args:
+            session (session class): Active SSH session object.
+            process_name (str): The name of the running process (and binary).
+            binary_dir (str): Directory where the binary resides (default: /usr/bin)
+
+        Returns:
+            bool: True if successfully restarted, False otherwise.
+        """
+        if session.type != "ssh":
+            return False
+
+        binary_path = os.path.join(binary_dir, process_name)
+
+        # Kill the process
+        kill_cmd = f"pkill -f {binary_path}"
+        session.write(kill_cmd)
+        self.log.info(f"Killing process: {binary_path}")
+        output = session.read_until(session.prompt, timeout=5)
+        self.log.info(output)
+
+        # Start the process
+        start_cmd = f"{binary_path} &"
+        session.write(start_cmd)
+        self.log.info(f"Restarting process: {start_cmd}")
+        output = session.read_until(session.prompt, timeout=5)
+        self.log.info(output)
+
+        # Verify it's running
+        verify_cmd = f"ps -ef | grep -i {process_name} | grep -v grep"
+        session.write(verify_cmd)
+        output = session.read_until(session.prompt, timeout=5)
+        self.log.info(output)
+
+        if process_name in output:
+            self.log.info(f"{process_name} restarted successfully.")
+            return True
+        else:
+            self.log.error(f"Failed to restart {process_name}.")
+            return False
+
 
 # Test and example usage code
 if __name__ == '__main__':

@@ -196,48 +196,78 @@ class utCFramework:
             return int(match.group(1))
         return None
 
-    def collect_results(self, output):
+
+    def collect_results(self, output, gtest: bool = False):
         """
         Collects and interprets the results from the test execution output.
 
         Args:
             output (str): The output from the test execution.
+            gtest (bool): Flag to indicate whether to parse GTest-style summary format.
 
         Returns:
             bool: True if the test passed successfully, False if the test failed, or None if the output format is unexpected.
         """
 
-        # Pattern to detect the number of suites, tests, and asserts with their corresponding results
-        # Run Summary:    Type  Total    Ran Passed Failed Inactive
-        #       suites      2      0    n/a      0        0
-        #        tests     16      1      1      0        0
-        #      asserts      2      2      2      0      n/a
-        run_summary_pattern = r"Run Summary:\s+Type\s+Total\s+Ran\s+Passed\s+Failed\s+Inactive"
-        summary_match = re.search(run_summary_pattern, output)
+        if gtest:
+            # GTest-style summary parsing
+            run_summary_found = "Run Summary:" in output
+            if not run_summary_found:
+                self.log.error("Run Summary not found.")
+                return None
 
-        if summary_match:
-            # Extract the relevant lines for suites, tests, and asserts
-            suite_summary_line = re.search(r"suites\s+\d+\s+\d+\s+n/a\s+(\d+)\s+\d+", output)
-            test_summary_line = re.search(r"tests\s+\d+\s+\d+\s+(\d+)\s+(\d+)\s+\d+", output)
-            assert_summary_line = re.search(r"asserts\s+\d+\s+\d+\s+(\d+)\s+(\d+)\s+n/a", output)
+            # Match Suites, Tests, and Asserts lines
+            suite_line = re.search(r"Suites\s+\d+\s+\d+\s+n/a\s+n/a\s+(\d+)\s+n/a", output)
+            test_line = re.search(r"Tests\s+\d+\s+\d+\s+(\d+)\s+(\d+)\s+\d+\s+\d+", output)
+            assert_line = re.search(r"Asserts\s+\d+\s+\d+\s+(\d+)\s+(\d+)\s+\d+", output)
 
-            if suite_summary_line and test_summary_line and assert_summary_line:
-                suites_failed = int(suite_summary_line.group(1))
-                tests_failed = int(test_summary_line.group(2))
-                asserts_failed = int(assert_summary_line.group(2))
+            if suite_line and test_line and assert_line:
+                suites_inactive = int(suite_line.group(1))
+                tests_passed = int(test_line.group(1))
+                tests_failed = int(test_line.group(2))
+                asserts_passed = int(assert_line.group(1))
+                asserts_failed = int(assert_line.group(2))
 
-                if suites_failed == 0 and tests_failed == 0 and asserts_failed == 0:
-                    self.log.info("Test passed successfully.")
+                if tests_failed == 0 and asserts_failed == 0 and suites_inactive == 0:
+                    self.log.info("Test passed successfully (GTest format).")
                     return True
                 else:
-                    self.log.error("Test failed.")
+                    self.log.error(
+                        f"Test failed (GTest format). Suites inactive: {suites_inactive}, "
+                        f"Tests failed: {tests_failed}, Asserts failed: {asserts_failed}"
+                    )
                     return False
             else:
-                self.log.error("Unexpected output format.")
+                self.log.error("Unexpected GTest output format.")
                 return None
+
         else:
-            self.log.error("Run Summary not found.")
-            return None
+            # cunit parsing
+            run_summary_pattern = r"Run Summary:\s+Type\s+Total\s+Ran\s+Passed\s+Failed\s+Inactive"
+            summary_match = re.search(run_summary_pattern, output)
+
+            if summary_match:
+                suite_summary_line = re.search(r"suites\s+\d+\s+\d+\s+n/a\s+(\d+)\s+\d+", output)
+                test_summary_line = re.search(r"tests\s+\d+\s+\d+\s+(\d+)\s+(\d+)\s+\d+", output)
+                assert_summary_line = re.search(r"asserts\s+\d+\s+\d+\s+(\d+)\s+(\d+)\s+n/a", output)
+
+                if suite_summary_line and test_summary_line and assert_summary_line:
+                    suites_failed = int(suite_summary_line.group(1))
+                    tests_failed = int(test_summary_line.group(2))
+                    asserts_failed = int(assert_summary_line.group(2))
+
+                    if suites_failed == 0 and tests_failed == 0 and asserts_failed == 0:
+                        self.log.info("Test passed successfully.")
+                        return True
+                    else:
+                        self.log.error("Test failed.")
+                        return False
+                else:
+                    self.log.error("Unexpected output format.")
+                    return None
+            else:
+                self.log.error("Run Summary not found.")
+                return None
 
 class UTSuiteNavigatorClass:
 
@@ -347,8 +377,8 @@ class UTSuiteNavigatorClass:
     def stop(self):
         self.framework.stop()
 
-    def collect_results(self, output):
-        results = self.framework.collect_results( output )
+    def collect_results(self, output, gtest: bool = False):
+        results = self.framework.collect_results( output, gtest )
         return results
 
     def run(self, suite_name, test_name=None):
