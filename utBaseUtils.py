@@ -48,7 +48,7 @@ class utBaseUtils():
             self.log = logModule(self.__class__.__name__)
             self.log.setLevel( self.log.INFO )
 
-    def scpCopy(self, session, sourcePath, destinationPath):
+    def scpCopy(self, session, sourcePath, destinationPath, isRemoteSource:bool=False):
         """
         Copies a file from the host machine to the target device using SCP (for SSH connections).
 
@@ -63,13 +63,18 @@ class utBaseUtils():
         if session.type != "ssh":
             self.log.fatal("Session type must be 'ssh'")
 
-        # make sure that the folder is created on the device
-        session.write(f"mkdir -p {destinationPath}")
-
         username = session.username
-        destination = "{}@{}:{}".format(username, session.address, destinationPath)
-
         port = session.port
+        if not isRemoteSource:
+            destination = f"{username}@{session.address}:{destinationPath}"
+            source = sourcePath
+            # make sure that the folder is created on the device
+            session.write(f"mkdir -p {destination}")
+        else:
+            source = f"{username}@{session.address}:{sourcePath}"
+            destination = destinationPath
+            os.makedirs(destinationPath, exist_ok = True )
+
         # Construct the SCP command with options to disable strict host key checking and known_hosts file
         command = [
             "scp",
@@ -77,7 +82,7 @@ class utBaseUtils():
             "-o", "StrictHostKeyChecking=no",
             "-o", "UserKnownHostsFile=/dev/null",
             "-o", "HostKeyAlgorithms=ssh-rsa,rsa-sha2-512,rsa-sha2-256,ssh-ed25519",
-            sourcePath, destination
+            source, destination
         ]
 
         # Execute the SCP command and capture the output
