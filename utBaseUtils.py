@@ -50,12 +50,13 @@ class utBaseUtils():
 
     def scpCopy(self, session, sourcePath, destinationPath, isRemoteSource:bool=False):
         """
-        Copies a file from the host machine to the target device using SCP (for SSH connections).
+        Copies a file from the host machine to the target device/target device to host machine using SCP (for SSH connections).
 
         Args:
             session (session class): The active session object that contains SSH connection details.
-            sourcePath (str): The full path of the file on the host machine.
-            destinationPath (str): The target path on the device where the file will be copied.
+            sourcePath (str): The full path of the file on the host machine/device.
+            destinationPath (str): The target directory path on the host machine/device where the file will be copied.
+            isRemoteSource (bool): Variabl to specify if target device is the source.
 
         Returns:
             str: The message from the subprocess (SCP output).
@@ -66,11 +67,13 @@ class utBaseUtils():
         username = session.username
         port = session.port
         if not isRemoteSource:
+            # When user needs to copy from device to host machine
             destination = f"{username}@{session.address}:{destinationPath}"
             source = sourcePath
             # make sure that the folder is created on the device
             session.write(f"mkdir -p {destination}")
         else:
+            # When user needs to copy from host machine to device
             source = f"{username}@{session.address}:{sourcePath}"
             destination = destinationPath
             os.makedirs(destinationPath, exist_ok = True )
