@@ -50,13 +50,16 @@ class utBaseUtils():
 
     def scpCopy(self, session, sourcePath, destinationPath, isRemoteSource:bool=False):
         """
-        Copies a file from the host machine to the target device/target device to host machine using SCP (for SSH connections).
+        Copies a file between the host machine and a remote device using SCP (Secure Copy Protocol) over SSH. 
+        The direction of the transfer is determined by the isRemoteSource parameter:
+        If isRemoteSource is False (default), the function copies a file from the host machine to the remote device.It ensures the target directory exists on the device before copying.
+        If isRemoteSource is True, the function copies a file from the remote device to the host machine.It ensures the target directory exists on the local machine before copying.
 
         Args:
             session (session class): The active session object that contains SSH connection details.
-            sourcePath (str): The full path of the file on the host machine/device.
-            destinationPath (str): The target directory path on the host machine/device where the file will be copied.
-            isRemoteSource (bool): Variabl to specify if target device is the source.
+            sourcePath: Path to the source file (on host or device, depending on isRemoteSource).
+            destinationPath: Target directory path (on host or device, depending on isRemoteSource).
+            isRemoteSource (bool): Set to True to copy from device to host or False to copy from host to device.
 
         Returns:
             str: The message from the subprocess (SCP output).
