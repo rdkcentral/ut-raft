@@ -116,14 +116,18 @@ class utBaseUtils():
             # Return error message in case of failure
             return f"SFTP copy failed: {e}"
 
-    def scpCopy(self, session, sourcePath, destinationPath):
+    def scpCopy(self, session, sourcePath, destinationPath, isRemoteSource:bool=False):
         """
-        Copies a file from the host machine to the target device using SCP (for SSH connections).
+        Copies a file between the host machine and a remote device using SCP (Secure Copy Protocol) over SSH. 
+        The direction of the transfer is determined by the isRemoteSource parameter:
+        If isRemoteSource is False (default), the function copies a file from the host machine to the remote device.It ensures the target directory exists on the device before copying.
+        If isRemoteSource is True, the function copies a file from the remote device to the host machine.It ensures the target directory exists on the local machine before copying.
 
         Args:
             session (session class): The active session object that contains SSH connection details.
-            sourcePath (str): The full path of the file on the host machine.
-            destinationPath (str): The target path on the device where the file will be copied.
+            sourcePath: Path to the source file (on host or device, depending on isRemoteSource).
+            destinationPath: Target directory path (on host or device, depending on isRemoteSource).
+            isRemoteSource (bool): Set to True to copy from device to host or False to copy from host to device.
 
         Returns:
             str: The message from the subprocess (SCP output).
@@ -131,13 +135,20 @@ class utBaseUtils():
         if session.type != "ssh":
             self.log.fatal("Session type must be 'ssh'")
 
-        # make sure that the folder is created on the device
-        session.write(f"mkdir -p {destinationPath}")
-
         username = session.username
-        destination = "{}@{}:{}".format(username, session.address, destinationPath)
-
         port = session.port
+        if not isRemoteSource:
+            # When user needs to copy from device to host machine
+            destination = f"{username}@{session.address}:{destinationPath}"
+            source = sourcePath
+            # make sure that the folder is created on the device
+            session.write(f"mkdir -p {destination}")
+        else:
+            # When user needs to copy from host machine to device
+            source = f"{username}@{session.address}:{sourcePath}"
+            destination = destinationPath
+            os.makedirs(destinationPath, exist_ok = True )
+
         # Construct the SCP command with options to disable strict host key checking and known_hosts file
         command = [
             "scp",
@@ -145,7 +156,7 @@ class utBaseUtils():
             "-o", "StrictHostKeyChecking=no",
             "-o", "UserKnownHostsFile=/dev/null",
             "-o", "HostKeyAlgorithms=ssh-rsa,rsa-sha2-512,rsa-sha2-256,ssh-ed25519",
-            sourcePath, destination
+            source, destination
         ]
 
         # Execute the SCP command and capture the output
