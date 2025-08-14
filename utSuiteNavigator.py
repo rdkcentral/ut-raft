@@ -85,28 +85,30 @@ class utCFramework:
         self.log.debug(result)
         return result
 
-    def select(self, suite_name: str, test_name:str = None, promptWithAnswers: list = None, timeout:int = 10):
-        """select a test from the suite to execute and wait for Prompt
+    def select(self, suite_name: str, test_name: str = None, promptWithAnswers: list = None, timeout: int = 10, is_cunit: bool = True):
+        """
+        Select a test from the suite to execute and wait for Prompt.
 
         Args:
-            suite_name (str): suite to select
-            test_name (str, optional): test_name within the suite to select. Defaults to None, whole suite will be ran
-            input (bool, optional): if set to true then don't wait on last prompt
+            suite_name (str): Suite to select.
+            test_name (str, optional): Test name within the suite to select. Defaults to None; whole suite will be run.
+            promptWithAnswers (list, optional): List of input prompts and responses to handle during test execution.
             timeout (int): Time limit before timing out, in seconds. Defaults to 10 seconds.
+            is_cunit (bool): Set to True if running CUnit tests; False for GTest. Controls initial menu navigation.
 
         Raises:
-            ValueError: Suite {suite_name} not found the suite configuration
-            ValueError: Test {test_name} not found in suite
+            ValueError: If the suite or test name is not found.
 
         Returns:
-            str: output from the framework
+            str: Output from the framework.
         """
 
-        # Ensure we're at the top menu
-        self.session.write("x")
+        # Ensure we're at the top menu depending on the framework
+        self.session.write("x" if is_cunit else "m")
         self.session.write("u")
         output = self.session.read_until(self.commandPrompt)
         self.log.debug(output)
+
         self.session.write("s")
         output = self.session.read_until(self.selectPrompt)
         self.log.debug(output)
@@ -123,7 +125,7 @@ class utCFramework:
         self.log.debug(output)
 
         if test_name is None:
-            # Run the Suite of tests
+            # Run the suite of tests
             self.session.write("r")
             output = self.session.read_until(self.commandPrompt, timeout)
             self.log.debug(output)
@@ -140,17 +142,16 @@ class utCFramework:
                 raise ValueError(f"Test [{test_name}] not found in the suite.")
 
             self.log.info(f"Found test: [{test_name}] @ [{test_index}]")
-            # Run the specific test
             self.session.write(str(test_index))
 
-            # If Input is present we need to then wait on them
+            # If input prompts are present, handle them
             if promptWithAnswers is not None:
-                output = self.inputPrompts( promptWithAnswers )
+                output = self.inputPrompts(promptWithAnswers)
 
-            # Wait for the command prompt if there's no other input required
-            output += self.session.read_until(self.commandPrompt, timeout)
-
+            # Wait for the command prompt (final output)
+            output = self.session.read_until(self.commandPrompt, timeout)
             self.log.debug(output)
+
         return output
 
     def inputPrompts(self, promptsWithAnswers: dict):
@@ -195,48 +196,78 @@ class utCFramework:
             return int(match.group(1))
         return None
 
-    def collect_results(self, output):
+
+    def collect_results(self, output, gtest: bool = False):
         """
         Collects and interprets the results from the test execution output.
 
         Args:
             output (str): The output from the test execution.
+            gtest (bool): Flag to indicate whether to parse GTest-style summary format.
 
         Returns:
             bool: True if the test passed successfully, False if the test failed, or None if the output format is unexpected.
         """
 
-        # Pattern to detect the number of suites, tests, and asserts with their corresponding results
-        # Run Summary:    Type  Total    Ran Passed Failed Inactive
-        #       suites      2      0    n/a      0        0
-        #        tests     16      1      1      0        0
-        #      asserts      2      2      2      0      n/a
-        run_summary_pattern = r"Run Summary:\s+Type\s+Total\s+Ran\s+Passed\s+Failed\s+Inactive"
-        summary_match = re.search(run_summary_pattern, output)
+        if gtest:
+            # GTest-style summary parsing
+            run_summary_found = "Run Summary:" in output
+            if not run_summary_found:
+                self.log.error("Run Summary not found.")
+                return None
 
-        if summary_match:
-            # Extract the relevant lines for suites, tests, and asserts
-            suite_summary_line = re.search(r"suites\s+\d+\s+\d+\s+n/a\s+(\d+)\s+\d+", output)
-            test_summary_line = re.search(r"tests\s+\d+\s+\d+\s+(\d+)\s+(\d+)\s+\d+", output)
-            assert_summary_line = re.search(r"asserts\s+\d+\s+\d+\s+(\d+)\s+(\d+)\s+n/a", output)
+            # Match Suites, Tests, and Asserts lines
+            suite_line = re.search(r"Suites\s+\d+\s+\d+\s+n/a\s+n/a\s+(\d+)\s+n/a", output)
+            test_line = re.search(r"Tests\s+\d+\s+\d+\s+(\d+)\s+(\d+)\s+\d+\s+\d+", output)
+            assert_line = re.search(r"Asserts\s+\d+\s+\d+\s+(\d+)\s+(\d+)\s+\d+", output)
 
-            if suite_summary_line and test_summary_line and assert_summary_line:
-                suites_failed = int(suite_summary_line.group(1))
-                tests_failed = int(test_summary_line.group(2))
-                asserts_failed = int(assert_summary_line.group(2))
+            if suite_line and test_line and assert_line:
+                suites_inactive = int(suite_line.group(1))
+                tests_passed = int(test_line.group(1))
+                tests_failed = int(test_line.group(2))
+                asserts_passed = int(assert_line.group(1))
+                asserts_failed = int(assert_line.group(2))
 
-                if suites_failed == 0 and tests_failed == 0 and asserts_failed == 0:
-                    self.log.info("Test passed successfully.")
+                if tests_failed == 0 and asserts_failed == 0 and suites_inactive == 0:
+                    self.log.info("Test passed successfully (GTest format).")
                     return True
                 else:
-                    self.log.error("Test failed.")
+                    self.log.error(
+                        f"Test failed (GTest format). Suites inactive: {suites_inactive}, "
+                        f"Tests failed: {tests_failed}, Asserts failed: {asserts_failed}"
+                    )
                     return False
             else:
-                self.log.error("Unexpected output format.")
+                self.log.error("Unexpected GTest output format.")
                 return None
+
         else:
-            self.log.error("Run Summary not found.")
-            return None
+            # cunit parsing
+            run_summary_pattern = r"Run Summary:\s+Type\s+Total\s+Ran\s+Passed\s+Failed\s+Inactive"
+            summary_match = re.search(run_summary_pattern, output)
+
+            if summary_match:
+                suite_summary_line = re.search(r"suites\s+\d+\s+\d+\s+n/a\s+(\d+)\s+\d+", output)
+                test_summary_line = re.search(r"tests\s+\d+\s+\d+\s+(\d+)\s+(\d+)\s+\d+", output)
+                assert_summary_line = re.search(r"asserts\s+\d+\s+\d+\s+(\d+)\s+(\d+)\s+n/a", output)
+
+                if suite_summary_line and test_summary_line and assert_summary_line:
+                    suites_failed = int(suite_summary_line.group(1))
+                    tests_failed = int(test_summary_line.group(2))
+                    asserts_failed = int(assert_summary_line.group(2))
+
+                    if suites_failed == 0 and tests_failed == 0 and asserts_failed == 0:
+                        self.log.info("Test passed successfully.")
+                        return True
+                    else:
+                        self.log.error("Test failed.")
+                        return False
+                else:
+                    self.log.error("Unexpected output format.")
+                    return None
+            else:
+                self.log.error("Run Summary not found.")
+                return None
 
 class UTSuiteNavigatorClass:
 
@@ -287,28 +318,34 @@ class UTSuiteNavigatorClass:
         else:
             self.log.error("Invalid Menu Type Configuration :{}".format(test_type))
 
-    def select(self, suite_name: str, test_name:str = None, promptWithAnswers:dict = None, timeout:int = 10):
-        """Select a menu from an already running system
+    def select(self, suite_name: str, test_name: str = None, promptWithAnswers: dict = None, timeout: int = 10, is_cunit: bool = True):
+        """
+        Select a menu from an already running system.
 
         Args:
-            suite_name (str): Suite Name
-            test_id (str): Test name or None for the whole suite
-            input (list optional): list of input values
+            suite_name (str): Suite Name.
+            test_name (str): Test name or None for the whole suite.
+            promptWithAnswers (dict, optional): Dictionary of input prompts and responses.
             timeout (int): Time limit before timing out, in seconds. Defaults to 10 seconds.
+            is_cunit (bool): Set to True if running a CUnit-based test. Defaults to False.
 
         Raises:
-            ValueError: not found in the menu configuration
-            ValueError: not found in the suite_name
+            ValueError: If test or suite name is not found in the configuration.
+
+        Returns:
+            str: Output from the framework.
         """
         # 1. Find the suite name from the configuration
         test_section = self.config.fields.get('test')
         if not test_section:
             self.log.error("Invalid Format [test:] section not found")
             return None
+
         suite_list = test_section.get('suites')
         if not suite_list:
             self.log.error("Invalid Format [suites:] section not found")
             return None
+
         found = False
         # Just validate that the test is in the expected list
         for index in suite_list:
@@ -316,16 +353,19 @@ class UTSuiteNavigatorClass:
             if not suite:
                 self.log.error("Invalid Format [suites.<index>]")
                 return None
+
             testsList = suite.get("tests")
             if not testsList:
                 continue
+
             if test_name in testsList:
                 found = True
                 break
-        if not found:
-            self.log.info("Suite:[{}] Test:[{}] Not Found Run all Test with r option".format(suite_name, test_name))
 
-        result = self.framework.select( suite_name, test_name, promptWithAnswers, timeout )
+        if not found:
+            self.log.info("Suite:[{}] Test:[{}] Not Found. Run all tests with 'r' option.".format(suite_name, test_name))
+
+        result = self.framework.select(suite_name, test_name, promptWithAnswers, timeout, is_cunit)
 
         return result
 
@@ -337,8 +377,8 @@ class UTSuiteNavigatorClass:
     def stop(self):
         self.framework.stop()
 
-    def collect_results(self, output):
-        results = self.framework.collect_results( output )
+    def collect_results(self, output, gtest: bool = False):
+        results = self.framework.collect_results( output, gtest )
         return results
 
     def run(self, suite_name, test_name=None):
