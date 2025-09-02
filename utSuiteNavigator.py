@@ -71,6 +71,19 @@ class utCFramework:
         #self.log.debug("start[{}]".format(result))
         if result == "":
             self.log.error("Failed to start[{}]".format(command))
+        else:
+            # Regex patterns
+            patterns = {
+                    "HALIF Test Version": r"HALIF Test Version:\s*(?:\x1b\[[0-9;]*m)?([\d.]+)(?:\x1b\[0m)?",
+                    "UT CORE Version": r"UT CORE Version:\s*(?:\x1b\[[0-9;]*m)?([\d.]+)(?:\x1b\[0m)?"
+            }
+            results = {}
+            for key, pattern in patterns.items():
+                match = re.search(pattern, format(result))
+                if match:
+                    results[key] = match.group(1)
+            self.log.info("HALIF Test Version: {}".format(results.get("HALIF Test Version")))
+            self.log.info("UT CORE Version: {}".format(results.get("UT CORE Version")))
         return result
 
     def stop(self):
