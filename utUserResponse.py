@@ -54,17 +54,21 @@ class utUserResponse():
             query (str, optional): Query to the user. Defaults to ""
 
         Returns:
-            bool: returns the response
+            bool: returns the response. True for 'y'/'Y', False for 'n'/'N'
         """
 
         if self.log is not None:
             self.log.debug(query)
         response = input(query)
 
-        if response == 'y' or response == 'Y' :
-            return True
-        else :
-            return False
+        while True:
+            if response == 'y' or response == 'Y' :
+                return True
+            elif response == 'N' or response == 'n':
+                return False
+            else:
+                print("Invalid input. Please enter 'y/Y' for Yes or 'n/N' for No.")
+                response = input(query)
 
 # Test and example usage code
 if __name__ == '__main__':
