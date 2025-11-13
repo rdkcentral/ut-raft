@@ -36,6 +36,7 @@ from framework.core.logModule import logModule
 from framework.core.commandModules.consoleInterface import consoleInterface
 from interactiveShell import InteractiveShell
 from configRead import ConfigRead
+from utUserResponse import utUserResponse
 
 class utCFramework:
     """This module supports the selection of C Type tests
@@ -55,6 +56,7 @@ class utCFramework:
             self.log.setLevel( self.log.DEBUG )
         self.commandPrompt = r"command: "  # CUnit Prompt
         self.selectPrompt = r") : "
+        self.testUserResponse = utUserResponse()
 
     def start(self, command:str ):
         """start the suite
@@ -174,6 +176,9 @@ class utCFramework:
                 input = str(value)
             else:
                 input = prompt.get("input")
+
+            if input == "user_prompt":
+                input = self.testUserResponse.getUserYN(prompt.get("query"))
             self.session.write(input)
             output += session_output
 
