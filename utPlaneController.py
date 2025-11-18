@@ -23,12 +23,10 @@
 
 import os
 import sys
-import time
-import re
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path)
-sys.path.append(dir_path+"/../../../")
+sys.path.append(os.path.join(dir_path, "..", "..", ".."))
 
 from framework.core.logModule import logModule
 from framework.plugins.ut_raft.interactiveShell import InteractiveShell
@@ -55,6 +53,7 @@ class utPlaneController():
     Example:
         >>> controller = utPlaneController(session, port=8080)
         >>> controller.sendMessage("/path/on/dut/to/test_config.yaml")
+        >>> controller.sendMessage("yaml string directly")
     """
 
     def __init__(self, session:object, port: int = 8080, log:logModule=None):
@@ -74,52 +73,76 @@ class utPlaneController():
         self.session = session
         self.port = port
 
-    def sendMessage(self, yamlString: str) -> None:
+    def sendMessage(self, yamlInput: str) -> bool:
         """
         Sends a command to the ut-controller via curl.
 
         Args:
-            yamlString (str): YAML string containing the command.
+            yamlInput (str): Either a YAML string or path to a YAML file.
 
         Returns:
-            None.
+            bool: True if the message was sent successfully, False otherwise.
         """
+        try:
+            # Validate input
+            if not yamlInput or not isinstance(yamlInput, str):
+                self.log.error("Invalid input provided")
+                return False
 
-        # Prepare the curl command
-        cmd = f'curl -X POST -H "Content-Type: application/x-yaml" --data-binary "{yamlString}" "http://localhost:{self.port}/api/postKVP"'
+            # Check if input is a file path
+            if os.path.isfile(yamlInput):
+                # It's a file path - use --data-binary with file reference
+                yaml_content = yamlInput
+                cmd = f'curl -X POST -H "Content-Type: application/x-yaml" --data-binary @"{yaml_content}" "http://localhost:{self.port}/api/postKVP"'
+                self.log.info(f"Sending YAML file: {yamlInput}")
+            else:
+                # It's a direct YAML string - escape quotes and send inline
+                yaml_content = yamlInput.replace('"', '\\"')
+                cmd = f'curl -X POST -H "Content-Type: application/x-yaml" --data-binary "{yaml_content}" "http://localhost:{self.port}/api/postKVP"'
+                self.log.info("Sending YAML string")
 
-        self.session.write(cmd)
+            # Send command
+            self.session.write(cmd)
 
-        return None
+            self.log.info(f"Message sent successfully to ut-controller on port {self.port}")
+            return True
 
-    if __name__ == '__main__':
-        """
-        Example main function demonstrating usage of utPlaneController class.
+        except Exception as e:
+            self.log.error(f"Failed to send message to ut-controller: {str(e)}")
+            return False
 
-        This example shows how to:
-        1. Create a interactive session object for testing
-        2. Initialize the utPlaneController
-        3. Send a YAML configuration file to the ut-controller
-        """
+if __name__ == '__main__':
+    """
+    Example main function demonstrating usage of utPlaneController class.
 
-        shell = InteractiveShell()
+    This example shows how to:
+    1. Create a interactive session object for testing
+    2. Initialize the utPlaneController
+    3. Send a YAML configuration file to the ut-controller
+    4. Send a YAML string directly to the ut-controller
+    """
 
-        # Initialize the controller with default port 8080
-        controller = utPlaneController(session=shell, port=8080)
+    shell = InteractiveShell()
 
-        # Example: Send a YAML file to the ut-controller
-        yaml_file_path = "/tmp/test_config.yaml"
+    result = shell.open()
 
-        '''
-        This is a sample YAML configuration for testing.
-        HdmiCec:
-            command: print
-            description: Print the current HDMI CEC device map
-        '''
+    # Initialize the controller with default port 8080
+    controller = utPlaneController(session=shell, port=8080)
 
-        print(f"Sending YAML file to ut-controller: {yaml_file_path}")
-        controller.sendMessage(yaml_file_path)
+    # Example 1: Send a YAML file to the ut-controller
+    yaml_file_path = "/tmp/test_config.yaml"
 
-        print("\nExample completed successfully!")
+    print(f"Example 1: Sending YAML file to ut-controller: {yaml_file_path}")
+    controller.sendMessage(yaml_file_path)
 
-        shell.close()
+    # Example 2: Send a YAML string directly to the ut-controller
+    yaml_string = """HdmiCec:
+    command: print
+    description: Print the current HDMI CEC device map"""
+
+    print("\nExample 2: Sending YAML string to ut-controller")
+    controller.sendMessage(yaml_string)
+
+    print("\nExamples completed successfully!")
+
+    shell.close()
