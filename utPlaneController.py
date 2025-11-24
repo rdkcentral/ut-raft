@@ -94,12 +94,10 @@ class utPlaneController():
                 # It's a file path - use --data-binary with file reference
                 yaml_content = yamlInput
                 cmd = f'curl -X POST -H "Content-Type: application/x-yaml" --data-binary @"{yaml_content}" "http://localhost:{self.port}/api/postKVP"'
-                self.log.info(f"Sending YAML file: {yamlInput}")
             else:
                 # It's a direct YAML string - escape quotes and send inline
                 yaml_content = yamlInput.replace('"', '\\"')
                 cmd = f'curl -X POST -H "Content-Type: application/x-yaml" --data-binary "{yaml_content}" "http://localhost:{self.port}/api/postKVP"'
-                self.log.info("Sending YAML string")
 
             # Send command
             self.session.write(cmd)
