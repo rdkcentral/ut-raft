@@ -56,7 +56,7 @@ class utCFramework:
             self.log.setLevel( self.log.DEBUG )
         self.commandPrompt = r"command: "  # CUnit Prompt
         self.selectPrompt = r") : "
-        self.testUserResponse = utUserResponse()
+        self.testUserResponse = utUserResponse(self.log)
 
     def start(self, command:str ):
         """start the suite
