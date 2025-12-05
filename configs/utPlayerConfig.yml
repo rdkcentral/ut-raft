@@ -63,3 +63,26 @@ mediatek:
     stop_command: "\x03" # CNTRL-C
     primary_mixer_input_config: ""
     secondary_mixer_input_config: ""
+amlogic_polaris: # Platform name
+  gstreamer: # player Name
+    prerequisites: # Prerequisites if any to run the player
+      - export XDG_RUNTIME_DIR=/run/user/0
+      - export LD_PRELOAD=libwesteros_gl.so.0.0.0
+      - export WESTEROS_GL_GRAPHICS_MAX_SIZE=1920x1080
+      - export WESTEROS_GL_MODE=3840x2160x60
+      - export WAYLAND_DISPLAY=main0
+      - rm -rf /run/user/0
+      - mkdir -p /run/user/0
+      - westeros --renderer libwesteros_render_embedded.so.0.0.0 --display ${WAYLAND_DISPLAY} --embedded --window-size 1920x1080 --noFBO &
+      - export GST_PLUGIN_FEATURE_RANK='westerossink:0,amlhalasink:0'
+    play_command: gst-play-1.0 # Player command to play the stream
+    stop_command: "\x03" # CNTRL-C
+    primary_mixer_input_config: ""
+    secondary_mixer_input_config: '--audiosink "amlhalasink direct-mode=0"'
+vdevice: # Platform name
+  gstreamer: # player Name
+    prerequisites: [] # Prerequisites if any to run the player
+    play_command: gst-play-1.0 # Player command to play the stream
+    stop_command: "\x03" # CNTRL-C
+    primary_mixer_input_config: ""
+    secondary_mixer_input_config: '--audiosink '
