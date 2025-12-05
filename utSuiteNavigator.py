@@ -73,6 +73,8 @@ class utCFramework:
         #self.log.debug("start[{}]".format(result))
         if result == "":
             self.log.error("Failed to start[{}]".format(command))
+        else:
+            self.log.info(result)
         return result
 
     def stop(self):
