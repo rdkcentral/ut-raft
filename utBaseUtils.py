@@ -118,7 +118,7 @@ class utBaseUtils():
 
     def scpCopy(self, session, sourcePath, destinationPath, isRemoteSource:bool=False):
         """
-        Copies a file between the host machine and a remote device using SCP (Secure Copy Protocol) over SSH. 
+        Copies a file between the host machine and a remote device using SCP (Secure Copy Protocol) over SSH.
         The direction of the transfer is determined by the isRemoteSource parameter:
         If isRemoteSource is False (default), the function copies a file from the host machine to the remote device.It ensures the target directory exists on the device before copying.
         If isRemoteSource is True, the function copies a file from the remote device to the host machine.It ensures the target directory exists on the local machine before copying.
@@ -229,13 +229,7 @@ class utBaseUtils():
         if isinstance(tar_gz_path, list):
             tar_gz_path = os.path.normpath(os.path.join(*tar_gz_path))
 
-        # Now safe to use basename
-        tar_file_name = os.path.basename(tar_gz_path)
-
-        # You can optionally change directory before untarring
-        # e.g., cd to extract_path and untar from there if needed:
-        # cmd_untar = f"cd {extract_path} && tar -xzf {tar_gz_path}"
-        # But generally, -C {extract_path} is enough.
+        tar_file_name = tar_gz_path
 
         # Untar command on the remote device (using full path of tar file)
         cmd_untar = f"tar -xzf {tar_file_name} -C {extract_path}"
@@ -273,7 +267,7 @@ class utBaseUtils():
         self.log.info(f"Changing directory on remote to: {directory_path}")
 
         # Read output to verify current directory
-        output = session.read(timeout=5)
+        output = session.read_until(session.prompt, timeout=5)
 
         if directory_path.rstrip("/") in output:
             self.log.info(f"Successfully changed to directory: {directory_path}")
