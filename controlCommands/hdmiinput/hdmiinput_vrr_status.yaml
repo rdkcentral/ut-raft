@@ -1,0 +1,31 @@
+#** *****************************************************************************
+# *
+# * If not stated otherwise in this file or this component's LICENSE file the
+# * following copyright and licenses apply:
+# *
+# * Copyright 2025 RDK Management
+# *
+# * Licensed under the Apache License, Version 2.0 (the "License");
+# * you may not use this file except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *
+# * http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *
+#** ******************************************************************************
+
+hdmiinput:                        # root node
+  command: vrr_status             # command name - fires a Variable Refresh Rate (VRR) status event on the HDMI input port
+  description: Sends the VRR status of HDMI input ports  # human-readable note (not parsed by stub)
+  params:                         # parameters for the command
+    port: 0                       # HDMI input port index (0-based, platform-dependent)
+    vrrActive: true               # Whether VRR is currently active on this port: true | false
+    M_CONST: true                 # M_CONST flag from the VRR metadata: true = constant frame rate mode, false = variable
+    fastVActive: true             # Fast-VActive flag: true = fast vertical active signaling enabled, false = disabled
+    frameRate: 120.0              # Current frame rate in Hz when VRR is active (e.g. 48.0 to 144.0 depending on display)
