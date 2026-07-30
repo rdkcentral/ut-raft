@@ -20,9 +20,29 @@
 # *
 #** ******************************************************************************
 
-hdmiinput:                        # root node
-  command: drminfo_frame          # command name - injects a DRM (Dynamic Range & Mastering) InfoFrame for HDR metadata
-  description: Sends the drminfo frame to HDMI input ports  # human-readable note (not parsed by stub)
-  params:                         # parameters for the command
-    port: 0                       # HDMI input port index (0-based, platform-dependent)
-    data: [0x87, 0x01, 0x1A, 0x9A, 0x02, 0x00, 0xE0, 0x03, 0x80, 0x07, 0x38, 0x04, 0x00, 0x0A, 0x00, 0x01, 0x00, 0x00, 0x03, 0xE8, 0x00, 0x32, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]  # raw DRM InfoFrame bytes per HDMI 2.0a/CTA-861: [type=0x87, version, length, checksum, EOTF, static metadata type, display primaries, white point, max/min luminance]
+# HDMI Input DRM InfoFrame Event
+#
+# Injects a DRM (Dynamic Range & Mastering) InfoFrame for HDR metadata.
+
+hdmiinput:
+  command: drminfo_frame
+  # Type: string
+  # Supported values: drminfo_frame
+  # Injects a DRM (Dynamic Range & Mastering) InfoFrame for HDR metadata.
+
+  description: Sends the drminfo frame to HDMI input ports
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  params:
+    # Command parameters
+
+    port: 0
+    # Type: integer
+    # HDMI input port index (0-based).
+    # Range: Platform dependent (example: 0, 1, 2...)
+
+    data: [0x87, 0x01, 0x1A, 0x9A, 0x02, 0x00, 0xE0, 0x03, 0x80, 0x07, 0x38, 0x04, 0x00, 0x0A, 0x00, 0x01, 0x00, 0x00, 0x03, 0xE8, 0x00, 0x32, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    # Type: list[uint8]
+    # Raw DRM InfoFrame bytes per HDMI 2.0a/CTA-861.
+    # Format: [type=0x87, version, length, checksum, EOTF, static metadata type, display primaries, white point, max/min luminance]

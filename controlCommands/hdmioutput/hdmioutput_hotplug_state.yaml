@@ -20,9 +20,31 @@
 # *
 #** ******************************************************************************
 
-hdmioutput:                       # root node
-  command: hotplug_state          # command name - fires a hotplug state change event for the HDMI output port
-  description: Sends the hotplug state change event for HDMI output ports.  # human-readable note (not parsed by stub)
-  params:                         # parameters for the command
-    port: 0                       # HDMI output port index (0-based, platform-dependent)
-    connected: true               # Hotplug state: true = display connected (HPD high), false = display disconnected (HPD low)
+# HDMI Output Hotplug State Event
+#
+# Fires a hotplug state change event for the HDMI output port.
+
+hdmioutput:
+  command: hotplug_state
+  # Type: string
+  # Supported values: hotplug_state
+  # Fires a hotplug state change event for the HDMI output port.
+
+  description: Sends the hotplug state change event for HDMI output ports.
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  params:
+    # Command parameters
+
+    port: 0
+    # Type: integer
+    # HDMI output port index (0-based).
+    # Range: Platform dependent (example: 0, 1, 2...)
+
+    connected: true
+    # Type: boolean
+    # Hotplug state.
+    # Values:
+    #   true  - display connected (HPD high)
+    #   false - display disconnected (HPD low)

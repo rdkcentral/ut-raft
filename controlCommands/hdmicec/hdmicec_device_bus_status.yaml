@@ -19,7 +19,23 @@
 # * limitations under the License.
 # *
 #* ******************************************************************************
-HdmiCec:                          # root node
-  command: update_bus_status      # command name - updates the CEC bus line state
-  description: Updates the status of an HDMI CEC bus  # human-readable note (not parsed by stub)
-  status: "idle"                  # Bus state: idle = bus is free, busy = bus is occupied/transmitting
+# HDMI CEC Bus Status Update
+#
+# Updates the CEC bus line state.
+
+HdmiCec:
+  command: update_bus_status
+  # Type: string
+  # Supported values: update_bus_status
+  # Updates the CEC bus line state.
+
+  description: Updates the status of an HDMI CEC bus
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  status: "idle"
+  # Type: enum string
+  # Bus state.
+  # Values:
+  #   idle - bus is free
+  #   busy - bus is occupied/transmitting

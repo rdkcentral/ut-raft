@@ -20,12 +20,45 @@
 # *
 #** ******************************************************************************
 
-compositeinput:                   # root node
-  command: video_mode             # command name
-  description: Reports a detected video mode change on a composite input port (port must be STARTED).  # human-readable note (not parsed by stub)
-  params:                         # parameters for the command
-    port: 0                       # Port index (0-based)
-    pixelWidth: 720               # Horizontal resolution in pixels (e.g. 720 for SD NTSC/PAL)
-    pixelHeight: 480              # Vertical resolution in pixels; 480 = NTSC (North America), 576 = PAL (Europe)
-    interlaced: true              # Scanning method: true = interlaced (480i/576i), false = progressive (480p/576p)
-    frameRateInHz: 29.97          # Frame rate in Hz; 25.0 = PAL, 29.97 = NTSC, 50.0 = PAL-p, 59.94 = NTSC-p
+# Composite Input Video Mode Change Event
+#
+# Reports a detected video mode change on a composite input port (port must be STARTED).
+
+compositeinput:
+  command: video_mode
+  # Type: string
+  # Supported values: video_mode
+  # Reports a detected video mode change on a composite input port.
+
+  description: Reports a detected video mode change on a composite input port (port must be STARTED).
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  params:
+    # Command parameters
+
+    port: 0
+    # Type: integer
+    # Port index (0-based).
+
+    pixelWidth: 720
+    # Type: uint
+    # Horizontal resolution in pixels.
+    # Example: 720 for SD NTSC/PAL
+
+    pixelHeight: 480
+    # Type: uint
+    # Vertical resolution in pixels.
+    # Example: 480 = NTSC (North America), 576 = PAL (Europe)
+
+    interlaced: true
+    # Type: boolean
+    # Scanning method.
+    # Values:
+    #   true  - interlaced (480i/576i)
+    #   false - progressive (480p/576p)
+
+    frameRateInHz: 29.97
+    # Type: float
+    # Frame rate in Hz.
+    # Example: 25.0 = PAL, 29.97 = NTSC, 50.0 = PAL-p, 59.94 = NTSC-p

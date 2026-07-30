@@ -20,8 +20,24 @@
 # *
 #** ******************************************************************************
 
-hdmioutput:                       # root node
-  command: frame_rate_changed     # command name - fires a frame rate change event for the HDMI output port
-  description: Sends the frame rate change event for HDMI output port.  # human-readable note (not parsed by stub)
-  params:                         # parameters for the command
-    port: 0                       # HDMI output port index (0-based, platform-dependent)
+# HDMI Output Frame Rate Changed Event
+#
+# Fires a frame rate change event for the HDMI output port.
+
+hdmioutput:
+  command: frame_rate_changed
+  # Type: string
+  # Supported values: frame_rate_changed
+  # Fires a frame rate change event for the HDMI output port.
+
+  description: Sends the frame rate change event for HDMI output port.
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  params:
+    # Command parameters
+
+    port: 0
+    # Type: integer
+    # HDMI output port index (0-based).
+    # Range: Platform dependent (example: 0, 1, 2...)

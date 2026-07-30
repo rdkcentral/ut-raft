@@ -19,8 +19,23 @@
 # * limitations under the License.
 # *
 #* ******************************************************************************
-HdmiCec:                          # root node
-  command: remove_device          # command name - removes an existing device from the CEC network
-  description: Remove an HDMI CEC device from the device map  # human-readable note (not parsed by stub)
-  device:                         # device selector block
-    name: "GameConsole"           # name of the device to remove; must match an existing entry in the device map
+# HDMI CEC Remove Device
+#
+# Removes an existing device from the CEC network.
+
+HdmiCec:
+  command: remove_device
+  # Type: string
+  # Supported values: remove_device
+  # Removes an existing device from the CEC network.
+
+  description: Remove an HDMI CEC device from the device map
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  device:
+    # Device selector
+
+    name: "GameConsole"
+    # Type: string
+    # Name of the device to remove; must match an existing entry in the device map.

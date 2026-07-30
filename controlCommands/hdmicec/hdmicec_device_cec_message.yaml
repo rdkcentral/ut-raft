@@ -19,13 +19,51 @@
 # * limitations under the License.
 # *
 #* ******************************************************************************
-HdmiCec:                          # root node
-  command: cec_message            # command name - sends a named CEC message between two devices
-  description: Send a CEC message  # human-readable note (not parsed by stub)
-  message:                        # CEC message descriptor block
-    user_defined: false           # false = use named source/destination/opcode; true = use raw payload bytes only
-    source: "YAMAHA"              # logical name of the sending device (must exist in the device map)
-    destination: "VTV"            # logical name of the receiving device (must exist in the device map)
-    opcode: "CecVersion"          # CEC opcode name (e.g. CecVersion | ActiveSource | Standby | RequestActiveSource)
-    type: "Direct"                # Message routing: Direct = unicast to destination | Broadcast = sent to all devices
-    payload: ["cec_version"]      # Optional opcode parameters; contents are opcode-dependent (omit if none needed)
+# HDMI CEC Named Message
+#
+# Sends a named CEC message between two devices.
+
+HdmiCec:
+  command: cec_message
+  # Type: string
+  # Supported values: cec_message
+  # Sends a named CEC message between two devices.
+
+  description: Send a CEC message
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  message:
+    # CEC message descriptor
+
+    user_defined: false
+    # Type: boolean
+    # Message mode selector.
+    # Values:
+    #   false - use named source/destination/opcode
+    #   true  - use raw payload bytes only
+
+    source: "YAMAHA"
+    # Type: string
+    # Logical name of the sending device (must exist in the device map).
+
+    destination: "VTV"
+    # Type: string
+    # Logical name of the receiving device (must exist in the device map).
+
+    opcode: "CecVersion"
+    # Type: string
+    # CEC opcode name.
+    # Example: CecVersion, ActiveSource, Standby, RequestActiveSource
+
+    type: "Direct"
+    # Type: enum string
+    # Message routing.
+    # Values:
+    #   Direct    - unicast to destination
+    #   Broadcast - sent to all devices
+
+    payload: ["cec_version"]
+    # Type: list[string]
+    # Optional opcode parameters; contents are opcode-dependent.
+    # Omit if none needed.

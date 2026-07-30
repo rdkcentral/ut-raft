@@ -19,6 +19,16 @@
 # * limitations under the License.
 # *
 #* ******************************************************************************
-HdmiCec:                          # root node
-  command: print                  # command name - dumps the full CEC device map to the stub log output
-  description: Print the current HDMI CEC device map  # human-readable note (not parsed by stub)
+# HDMI CEC Print Device Map
+#
+# Dumps the full CEC device map to the stub log output.
+
+HdmiCec:
+  command: print
+  # Type: string
+  # Supported values: print
+  # Dumps the full CEC device map to the stub log output.
+
+  description: Print the current HDMI CEC device map
+  # Type: string
+  # Human-readable description of the command (documentation only).

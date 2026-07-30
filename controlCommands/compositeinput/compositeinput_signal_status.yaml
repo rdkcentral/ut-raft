@@ -20,9 +20,33 @@
 # *
 #** ******************************************************************************
 
-compositeinput:                   # root node
-  command: signal_status          # command name
-  description: Sets the signal status on a composite input port.  # human-readable note (not parsed by stub)
-  params:                         # parameters for the command
-    port: 0                       # Port index (0-based); valid range: 0 to (total_ports-1), platform-dependent
-    signalStatus: STABLE          # Options: NO_SIGNAL | UNSTABLE | NOT_SUPPORTED | STABLE
+# Composite Input Signal Status Event
+#
+# Sets the signal status on a composite input port.
+
+compositeinput:
+  command: signal_status
+  # Type: string
+  # Supported values: signal_status
+  # Sets the signal status on a composite input port.
+
+  description: Sets the signal status on a composite input port.
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  params:
+    # Command parameters
+
+    port: 0
+    # Type: integer
+    # Port index (0-based).
+    # Range: 0 to (total_ports-1), platform-dependent
+
+    signalStatus: STABLE
+    # Type: enum string
+    # Signal state to inject.
+    # Values:
+    #   NO_SIGNAL
+    #   UNSTABLE
+    #   NOT_SUPPORTED
+    #   STABLE

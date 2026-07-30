@@ -20,7 +20,24 @@
 # *
 #** ******************************************************************************
 
-IMotionSensor:                         # root node (Component object begins)
-    command: "motion_sensor_event"     # command name - fires a motion sensor event callback
-    sensor_id: 0                       # ID of the motion sensor to trigger (0-based; platform-dependent)
-    event: "MOTION"                    # Event type to inject: MOTION = motion detected | NO_MOTION = area is clear
+# Motion Sensor Event Trigger
+#
+# Fires a motion sensor event callback.
+
+IMotionSensor:
+    command: "motion_sensor_event"
+    # Type: string
+    # Supported values: motion_sensor_event
+    # Fires a motion sensor event callback.
+
+    sensor_id: 0
+    # Type: uint
+    # ID of the motion sensor to trigger.
+    # Range: 0-based, platform-dependent
+
+    event: "MOTION"
+    # Type: enum string
+    # Event type to inject.
+    # Values:
+    #   MOTION    - motion detected
+    #   NO_MOTION - area is clear

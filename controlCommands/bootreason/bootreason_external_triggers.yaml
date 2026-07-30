@@ -20,14 +20,27 @@
 # *
 #** ******************************************************************************
 
-bootreason:                  # root node
-  command: bootReason        # command name
-  params:                    # parameters for the command
-    reason: "ERROR_UNKNOWN"  # Options:
-                             #   ERROR_UNKNOWN    - Boot reason unknown or could not be determined (control command needed)
-                             #   WATCHDOG         - Boot due to Watchdog Timer reset (control command needed)
-                             #   MAINTENANCE_REBOOT - Boot due to maintenance-triggered reboot (no control command; API call)
-                             #   THERMAL_RESET    - Boot due to thermal reset from overheating (no control command; comes from sensor module)
-                             #   WARM_RESET       - Boot due to software-initiated reboot (no control command; API call)
-                             #   COLD_BOOT        - Boot due to cold boot or power cycle (control command needed)
-                             #   STR_AUTH_FAILURE - Boot due to Suspend-to-RAM authentication failure (control command needed)
+# Boot Reason External Trigger
+#
+# Sets the boot reason reported by the device via an external trigger.
+
+bootreason:
+  command: bootReason
+  # Type: string
+  # Supported values: bootReason
+  # Sets the boot reason to simulate.
+
+  params:
+    # Command parameters
+
+    reason: "ERROR_UNKNOWN"
+    # Type: enum string
+    # Boot reason to inject.
+    # Values:
+    #   ERROR_UNKNOWN      - Boot reason unknown or could not be determined (control command needed)
+    #   WATCHDOG           - Boot due to Watchdog Timer reset (control command needed)
+    #   MAINTENANCE_REBOOT - Boot due to maintenance-triggered reboot (no control command; API call)
+    #   THERMAL_RESET      - Boot due to thermal reset from overheating (no control command; comes from sensor module)
+    #   WARM_RESET         - Boot due to software-initiated reboot (no control command; API call)
+    #   COLD_BOOT          - Boot due to cold boot or power cycle (control command needed)
+    #   STR_AUTH_FAILURE   - Boot due to Suspend-to-RAM authentication failure (control command needed)

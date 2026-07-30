@@ -20,9 +20,29 @@
 # *
 #** ******************************************************************************
 
-hdmiinput:                        # root node
-  command: aviinfo_frame          # command name - injects an AV InfoFrame (video metadata) into the HDMI input port
-  description: Sends the AV InfoFrame to HDMI input ports  # human-readable note (not parsed by stub)
-  params:                         # parameters for the command
-    port: 0                       # HDMI input port index (0-based, platform-dependent)
-    data: [0x82, 0x02, 0x0D, 0x6F, 0x10, 0x18, 0x28, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]  # raw AVI InfoFrame bytes per CEA-861: [type=0x82, version=0x02, length, checksum, color/scan, bar info, picture aspect ratio, ...]
+# HDMI Input AVI InfoFrame Event
+#
+# Injects an AVI InfoFrame (video metadata) into the HDMI input port.
+
+hdmiinput:
+  command: aviinfo_frame
+  # Type: string
+  # Supported values: aviinfo_frame
+  # Injects an AV InfoFrame (video metadata) into the HDMI input port.
+
+  description: Sends the AV InfoFrame to HDMI input ports
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  params:
+    # Command parameters
+
+    port: 0
+    # Type: integer
+    # HDMI input port index (0-based).
+    # Range: Platform dependent (example: 0, 1, 2...)
+
+    data: [0x82, 0x02, 0x0D, 0x6F, 0x10, 0x18, 0x28, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    # Type: list[uint8]
+    # Raw AVI InfoFrame bytes per CEA-861.
+    # Format: [type=0x82, version=0x02, length, checksum, color/scan, bar info, picture aspect ratio, ...]

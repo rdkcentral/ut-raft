@@ -20,8 +20,32 @@
 # *
 #** ******************************************************************************
 
-deepsleep:                               # root node (Component object begins)
-    command: "DEEPSLEEP_SIMULATE_ERROR"  # command name - injects a failure into the deep sleep sequence
-    error_type: "BEFORE_DEEPSLEEP"       # When to inject: BEFORE_DEEPSLEEP (sleep never starts) | AFTER_DEEPSLEEP (error occurs after sleep completes)
-    return_code: "false"                 # Stub return value reported to app: true = sleep succeeded, false = sleep failed
-    exception: "EX_NONE"                 # Exception type to raise: EX_NONE | (future exception types per HAL interface)
+# Deep Sleep Error Injection
+#
+# Injects a failure into the deep sleep sequence.
+
+deepsleep:
+    command: "DEEPSLEEP_SIMULATE_ERROR"
+    # Type: string
+    # Supported values: DEEPSLEEP_SIMULATE_ERROR
+    # Injects a failure into the deep sleep sequence.
+
+    error_type: "BEFORE_DEEPSLEEP"
+    # Type: enum string
+    # Injection timing - when to trigger the error.
+    # Values:
+    #   BEFORE_DEEPSLEEP - sleep never starts
+    #   AFTER_DEEPSLEEP  - error occurs after sleep completes
+
+    return_code: false
+    # Type: boolean
+    # Stub return value reported to app.
+    # Values:
+    #   true  - sleep succeeded
+    #   false - sleep failed
+
+    exception: "EX_NONE"
+    # Type: enum string
+    # Exception type to raise.
+    # Values:
+    #   EX_NONE - no exception (future exception types per HAL interface)

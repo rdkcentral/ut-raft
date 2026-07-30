@@ -20,9 +20,29 @@
 # *
 #** ******************************************************************************
 
-hdmiinput:                        # root node
-  command: audioinfo_frame        # command name - injects an Audio InfoFrame into the HDMI input port
-  description: Sends the audioinfo frame to HDMI input ports  # human-readable note (not parsed by stub)
-  params:                         # parameters for the command
-    port: 0                       # HDMI input port index (0-based, platform-dependent)
-    data: [0x84, 0x01, 0x0A, 0x70, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]  # raw Audio InfoFrame bytes per CEA-861: [type=0x84, version, length, checksum, audio channel count, sampling freq, sample size, ...]
+# HDMI Input Audio InfoFrame Event
+#
+# Injects an Audio InfoFrame into the HDMI input port.
+
+hdmiinput:
+  command: audioinfo_frame
+  # Type: string
+  # Supported values: audioinfo_frame
+  # Injects an Audio InfoFrame into the HDMI input port.
+
+  description: Sends the audioinfo frame to HDMI input ports
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  params:
+    # Command parameters
+
+    port: 0
+    # Type: integer
+    # HDMI input port index (0-based).
+    # Range: Platform dependent (example: 0, 1, 2...)
+
+    data: [0x84, 0x01, 0x0A, 0x70, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    # Type: list[uint8]
+    # Raw Audio InfoFrame bytes per CEA-861.
+    # Format: [type=0x84, version, length, checksum, audio channel count, sampling freq, sample size, ...]

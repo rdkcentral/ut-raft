@@ -19,17 +19,85 @@
 # * limitations under the License.
 # *
 #* ******************************************************************************
-HdmiCec:                               # root node
-  command: add_device                  # command name - dynamically adds a new device to the CEC network
-  description: Add a new HDMI CEC device to the device map  # human-readable note (not parsed by stub)
-  device:                              # descriptor block for the new device to add
-    name: "GameConsole"                # unique logical name; used to reference this device in other commands
-    parent: "VTV"                      # name of the parent device in the CEC tree (must already exist in device map)
-    language: "eng"                    # ISO 639-2 three-letter language code (e.g. eng, fra, deu, spa)
-    cec_version: "1.4"                 # CEC specification version supported: "1.3a" | "1.4" | "2.0"
-    device_type: "PlaybackDevice"      # CEC device type: TV | RecordingDevice | PlaybackDevice | Tuner | AudioSystem | Switch
-    power_status: on                   # Initial power state: on | off | standby | transitionToOn | transitionToStandby
-    fault: no                          # Fault/error state: no = normal operation, yes = device in error state
-    port_id: 1                         # Physical HDMI port on parent device (0-based; 0 = directly on TV root)
-    number_of_ports: 0                 # Downstream HDMI ports this device provides (0 = leaf/sink, >0 = hub/repeater)
-    active_source: false               # Whether this device is the current active CEC source: true | false
+# HDMI CEC Add Device
+#
+# Dynamically adds a new device to the CEC network.
+
+HdmiCec:
+  command: add_device
+  # Type: string
+  # Supported values: add_device
+  # Dynamically adds a new device to the CEC network.
+
+  description: Add a new HDMI CEC device to the device map
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  device:
+    # New device descriptor
+
+    name: "GameConsole"
+    # Type: string
+    # Unique logical name; used to reference this device in other commands.
+
+    parent: "VTV"
+    # Type: string
+    # Name of the parent device in the CEC tree (must already exist in device map).
+
+    language: "eng"
+    # Type: string
+    # ISO 639-2 three-letter language code.
+    # Example: eng, fra, deu, spa
+
+    cec_version: "1.4"
+    # Type: string
+    # CEC specification version supported.
+    # Values:
+    #   "1.3a"
+    #   "1.4"
+    #   "2.0"
+
+    device_type: "PlaybackDevice"
+    # Type: enum string
+    # CEC device type.
+    # Values:
+    #   TV
+    #   RecordingDevice
+    #   PlaybackDevice
+    #   Tuner
+    #   AudioSystem
+    #   Switch
+
+    power_status: on
+    # Type: enum string
+    # Initial power state.
+    # Values:
+    #   on
+    #   off
+    #   standby
+    #   transitionToOn
+    #   transitionToStandby
+
+    fault: no
+    # Type: enum string
+    # Fault/error state.
+    # Values:
+    #   no  - normal operation
+    #   yes - device in error state
+
+    port_id: 1
+    # Type: uint
+    # Physical HDMI port on parent device (0-based).
+    # Use 0 for directly on TV root.
+
+    number_of_ports: 0
+    # Type: uint
+    # Downstream HDMI ports this device provides.
+    # Use 0 for leaf/sink, >0 for hub/repeater.
+
+    active_source: false
+    # Type: boolean
+    # Whether this device is the current active CEC source.
+    # Values:
+    #   true  - active source
+    #   false - not active source

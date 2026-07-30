@@ -20,8 +20,26 @@
 # *
 #** ******************************************************************************
 
-IThermalSensor:                                    # root node (Component object begins)
-    command: "temperature_update"                  # command name - injects a temperature reading from a thermal sensor
-    sensorName: "SoC Die"                          # name of the sensor providing the reading (e.g. "SoC Die", "DDR", "RF")
-    temperatureCelsius: 100.0                      # temperature value to inject in degrees Celsius
-    timestampMonotonicMs: 0                        # monotonic timestamp in milliseconds (0 = use current time)
+# Thermal Sensor Temperature Update
+#
+# Injects a temperature reading from a thermal sensor.
+
+IThermalSensor:
+    command: "temperature_update"
+    # Type: string
+    # Supported values: temperature_update
+    # Injects a temperature reading from a thermal sensor.
+
+    sensorName: "SoC Die"
+    # Type: string
+    # Name of the sensor providing the reading.
+    # Example: "SoC Die", "DDR", "RF"
+
+    temperatureCelsius: 100.0
+    # Type: float
+    # Temperature value in degrees Celsius.
+
+    timestampMonotonicMs: 0
+    # Type: uint64
+    # Monotonic timestamp in milliseconds.
+    # Use 0 to use current time.

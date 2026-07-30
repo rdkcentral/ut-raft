@@ -20,9 +20,29 @@
 # *
 #** ******************************************************************************
 
-hdmiinput:                        # root node
-  command: videoformat_change     # command name - fires a video format change event on the HDMI input port
-  description: Sends the video format change to HDMI input ports  # human-readable note (not parsed by stub)
-  params:                         # parameters for the command
-    port: 0                       # HDMI input port index (0-based, platform-dependent)
-    format: VIC16_1920_1080_P_60_16_9  # Video Identification Code (VIC) enum; Options: refer to hdmiinput/VIC.aidl
+# HDMI Input Video Format Change Event
+#
+# Fires a video format change event on the HDMI input port.
+
+hdmiinput:
+  command: videoformat_change
+  # Type: string
+  # Supported values: videoformat_change
+  # Fires a video format change event on the HDMI input port.
+
+  description: Sends the video format change to HDMI input ports
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  params:
+    # Command parameters
+
+    port: 0
+    # Type: integer
+    # HDMI input port index (0-based).
+    # Range: Platform dependent (example: 0, 1, 2...)
+
+    format: VIC16_1920_1080_P_60_16_9
+    # Type: enum string
+    # Video Identification Code (VIC) enum.
+    # Refer to hdmiinput/VIC.aidl for full list of supported values.

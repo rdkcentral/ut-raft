@@ -19,95 +19,277 @@
 # * limitations under the License.
 # *
 #* ******************************************************************************
-HdmiCec:                               # root node
-  command: configure                   # command name - initializes the full CEC network with multiple devices
-  description: Initialize HDMI CEC device map  # human-readable note (not parsed by stub)
-  config:                              # top-level configuration block
-    emulated_device:                   # the CEC identity the stub emulates on behalf of the DUT
-      name: "VTV"                      # unique name for the emulated device (the DUT)
-      language: "eng"                  # ISO 639-2 three-letter language code (e.g. eng, fra, deu)
-      cec_version: "1.4"               # CEC spec version: "1.3a" | "1.4" | "2.0"
-      device_type: "TV"                # CEC device type: TV | RecordingDevice | PlaybackDevice | Tuner | AudioSystem | Switch
-      power_status: "on"               # Power state: on | off | standby | transitionToOn | transitionToStandby
-      port_id: 0                       # Physical HDMI port (0 = TV root, no parent)
-      fault: no                        # Fault state: no = normal operation, yes = error state
-      number_of_ports: 4               # Total downstream HDMI ports available on this device
-      active_source: false             # Whether this device is the current active source: true | false
-    device_map:                        # full CEC network topology tree (all devices; root device listed first)
-      - device:                        # root device entry (the TV / DUT)
-        name: "VTV"                    # device name (unique identifier in the map)
-        language: "eng"                # ISO 639-2 language code
-        cec_version: "1.4"             # CEC spec version
-        device_type: "TV"              # CEC device type
-        power_status: "on"             # Power state
-        fault: no                      # Fault state: no | yes
-        port_id: 0                     # HDMI port on parent (0 = root / TV)
-        number_of_ports: 4             # Downstream HDMI ports on this device
-        active_source: false           # Active source flag: true | false
-        children:                      # devices physically connected to VTV's HDMI ports
-          - device:                    # child 1: AV receiver connected to VTV port 3
-            name: "YAMAHA"             # device name
-            language: "eng"            # ISO 639-2 language code
-            cec_version: "1.4"         # CEC spec version
-            device_type: "AudioSystem" # CEC device type: AudioSystem = AV receiver / soundbar
-            power_status: "on"         # Power state
-            fault: no                  # Fault state: no | yes
-            port_id: 3                 # Port on parent device (VTV port 3)
-            number_of_ports: 2         # YAMAHA has 2 downstream HDMI ports
-            active_source: true        # YAMAHA is currently the active CEC source
-            children:                  # devices connected downstream of YAMAHA
-              - device:                # grandchild 1: Blu-ray player connected to YAMAHA port 1
-                name: "PIONEER"        # device name
-                language: "eng"        # ISO 639-2 language code
-                cec_version: "1.4"     # CEC spec version
-                device_type: "PlaybackDevice"  # CEC device type
-                power_status: "on"     # Power state
-                fault: no              # Fault state: no | yes
-                port_id: 1             # Port on parent device (YAMAHA port 1)
-                number_of_ports: 0     # No downstream ports (leaf / sink device)
-                active_source: false   # Not the active source
-                children: []           # No children (leaf device)
-              - device:                # grandchild 2: streaming dongle connected to YAMAHA port 2
-                name: "GOOGLE"         # device name
-                language: "eng"        # ISO 639-2 language code
-                cec_version: "1.4"     # CEC spec version
-                device_type: "PlaybackDevice"  # CEC device type
-                power_status: "standby"  # Power state: in standby
-                fault: no              # Fault state: no | yes
-                port_id: 2             # Port on parent device (YAMAHA port 2)
-                number_of_ports: 0     # No downstream ports (leaf / sink device)
-                active_source: false   # Not the active source
-                children: []           # No children (leaf device)
-          - device:                    # child 2: set-top box connected to VTV port 2
-            name: "IPSTB"              # device name
-            language: "eng"            # ISO 639-2 language code
-            cec_version: "1.4"         # CEC spec version
-            device_type: "PlaybackDevice"  # CEC device type
-            power_status: "standby"    # Power state: in standby
-            fault: no                  # Fault state: no | yes
-            port_id: 2                 # Port on parent device (VTV port 2)
-            number_of_ports: 0         # No downstream ports (leaf / sink device)
-            active_source: false       # Not the active source
-            children: []               # No children (leaf device)
-          - device:                    # child 3: CEC adapter/switch connected to VTV port 0
-            name: "CECAdapter"         # device name
-            language: "eng"            # ISO 639-2 language code
-            cec_version: "1.4"         # CEC spec version
-            device_type: "RecordingDevice"  # CEC device type
-            power_status: "on"         # Power state
-            fault: no                  # Fault state: no | yes
-            port_id: 0                 # Port on parent device (VTV port 0)
-            number_of_ports: 2         # CECAdapter has 2 downstream HDMI ports
-            active_source: false       # Not the active source
-            children:                  # devices connected downstream of CECAdapter
-              - device:                # grandchild: game console connected to CECAdapter port 1
-                name: "GameConsole"    # device name
-                language: "eng"        # ISO 639-2 language code
-                cec_version: "1.4"     # CEC spec version
-                device_type: "PlaybackDevice"  # CEC device type
-                power_status: "on"     # Power state
-                fault: no              # Fault state: no | yes
-                port_id: 1             # Port on parent device (CECAdapter port 1)
-                number_of_ports: 0     # No downstream ports (leaf / sink device)
-                active_source: false   # Not the active source
-                children: []           # No children (leaf device)
+# HDMI CEC Configure Device Map (Full Network)
+#
+# Initializes the full CEC network with multiple devices and a tree topology.
+
+HdmiCec:
+  command: configure
+  # Type: string
+  # Supported values: configure
+  # Initializes the full CEC network with multiple devices.
+
+  description: Initialize HDMI CEC device map
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  config:
+    emulated_device:
+      # The CEC identity the stub emulates on behalf of the DUT.
+
+      name: "VTV"
+      # Type: string
+      # Unique name for the emulated device (the DUT).
+
+      language: "eng"
+      # Type: string
+      # ISO 639-2 three-letter language code.
+      # Example: eng, fra, deu
+
+      cec_version: "1.4"
+      # Type: string
+      # CEC spec version.
+      # Values:
+      #   "1.3a"
+      #   "1.4"
+      #   "2.0"
+
+      device_type: "TV"
+      # Type: enum string
+      # CEC device type.
+      # Values:
+      #   TV
+      #   RecordingDevice
+      #   PlaybackDevice
+      #   Tuner
+      #   AudioSystem
+      #   Switch
+
+      power_status: "on"
+      # Type: enum string
+      # Power state.
+      # Values:
+      #   on
+      #   off
+      #   standby
+      #   transitionToOn
+      #   transitionToStandby
+
+      port_id: 0
+      # Type: uint
+      # Physical HDMI port (0 = TV root, no parent).
+
+      fault: no
+      # Type: enum string
+      # Fault state.
+      # Values:
+      #   no  - normal operation
+      #   yes - error state
+
+      number_of_ports: 4
+      # Type: uint
+      # Total downstream HDMI ports available on this device.
+
+      active_source: false
+      # Type: boolean
+      # Whether this device is the current active source.
+      # Values:
+      #   true  - active source
+      #   false - not active source
+
+    device_map:
+      # Full CEC network topology tree (all devices; root device listed first).
+
+      - device:
+        # Root device entry (the TV / DUT).
+        name: "VTV"
+        # Type: string
+        # Device name (unique identifier in the map).
+        language: "eng"
+        # Type: string
+        # ISO 639-2 language code.
+        cec_version: "1.4"
+        # Type: string
+        # CEC spec version.
+        device_type: "TV"
+        # Type: enum string
+        # CEC device type.
+        power_status: "on"
+        # Type: enum string
+        # Power state.
+        fault: no
+        # Type: enum string
+        # Fault state. Values: no | yes
+        port_id: 0
+        # Type: uint
+        # HDMI port on parent (0 = root / TV).
+        number_of_ports: 4
+        # Type: uint
+        # Downstream HDMI ports on this device.
+        active_source: false
+        # Type: boolean
+        # Active source flag. Values: true | false
+        children:
+          # Devices physically connected to VTV's HDMI ports.
+
+          - device:
+            # Child 1: AV receiver connected to VTV port 3.
+            name: "YAMAHA"
+            # Type: string
+            language: "eng"
+            # Type: string
+            cec_version: "1.4"
+            # Type: string
+            device_type: "AudioSystem"
+            # Type: enum string
+            # AudioSystem = AV receiver / soundbar
+            power_status: "on"
+            # Type: enum string
+            fault: no
+            # Type: enum string
+            # Values: no | yes
+            port_id: 3
+            # Type: uint
+            # VTV port 3.
+            number_of_ports: 2
+            # Type: uint
+            # YAMAHA has 2 downstream HDMI ports.
+            active_source: true
+            # Type: boolean
+            # YAMAHA is currently the active CEC source.
+            children:
+              # Devices connected downstream of YAMAHA.
+
+              - device:
+                # Grandchild 1: Blu-ray player connected to YAMAHA port 1.
+                name: "PIONEER"
+                # Type: string
+                language: "eng"
+                # Type: string
+                cec_version: "1.4"
+                # Type: string
+                device_type: "PlaybackDevice"
+                # Type: enum string
+                power_status: "on"
+                # Type: enum string
+                fault: no
+                # Type: enum string
+                # Values: no | yes
+                port_id: 1
+                # Type: uint
+                # YAMAHA port 1.
+                number_of_ports: 0
+                # Type: uint
+                # No downstream ports (leaf / sink device).
+                active_source: false
+                # Type: boolean
+                children: []
+                # Type: list
+                # No children (leaf device).
+
+              - device:
+                # Grandchild 2: streaming dongle connected to YAMAHA port 2.
+                name: "GOOGLE"
+                # Type: string
+                language: "eng"
+                # Type: string
+                cec_version: "1.4"
+                # Type: string
+                device_type: "PlaybackDevice"
+                # Type: enum string
+                power_status: "standby"
+                # Type: enum string
+                fault: no
+                # Type: enum string
+                # Values: no | yes
+                port_id: 2
+                # Type: uint
+                # YAMAHA port 2.
+                number_of_ports: 0
+                # Type: uint
+                # No downstream ports (leaf / sink device).
+                active_source: false
+                # Type: boolean
+                children: []
+                # Type: list
+                # No children (leaf device).
+
+          - device:
+            # Child 2: set-top box connected to VTV port 2.
+            name: "IPSTB"
+            # Type: string
+            language: "eng"
+            # Type: string
+            cec_version: "1.4"
+            # Type: string
+            device_type: "PlaybackDevice"
+            # Type: enum string
+            power_status: "standby"
+            # Type: enum string
+            fault: no
+            # Type: enum string
+            # Values: no | yes
+            port_id: 2
+            # Type: uint
+            # VTV port 2.
+            number_of_ports: 0
+            # Type: uint
+            # No downstream ports (leaf / sink device).
+            active_source: false
+            # Type: boolean
+            children: []
+            # Type: list
+            # No children (leaf device).
+
+          - device:
+            # Child 3: CEC adapter/switch connected to VTV port 0.
+            name: "CECAdapter"
+            # Type: string
+            language: "eng"
+            # Type: string
+            cec_version: "1.4"
+            # Type: string
+            device_type: "RecordingDevice"
+            # Type: enum string
+            power_status: "on"
+            # Type: enum string
+            fault: no
+            # Type: enum string
+            # Values: no | yes
+            port_id: 0
+            # Type: uint
+            # VTV port 0.
+            number_of_ports: 2
+            # Type: uint
+            # CECAdapter has 2 downstream HDMI ports.
+            active_source: false
+            # Type: boolean
+            children:
+              # Devices connected downstream of CECAdapter.
+
+              - device:
+                # Grandchild: game console connected to CECAdapter port 1.
+                name: "GameConsole"
+                # Type: string
+                language: "eng"
+                # Type: string
+                cec_version: "1.4"
+                # Type: string
+                device_type: "PlaybackDevice"
+                # Type: enum string
+                power_status: "on"
+                # Type: enum string
+                fault: no
+                # Type: enum string
+                # Values: no | yes
+                port_id: 1
+                # Type: uint
+                # CECAdapter port 1.
+                number_of_ports: 0
+                # Type: uint
+                # No downstream ports (leaf / sink device).
+                active_source: false
+                # Type: boolean
+                children: []
+                # Type: list
+                # No children (leaf device).

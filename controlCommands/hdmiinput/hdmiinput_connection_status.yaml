@@ -20,9 +20,31 @@
 # *
 #** ******************************************************************************
 
-hdmiinput:                        # root node
-  command: connection_status      # command name - fires connection-change callback on the HDMI input port
-  description: Sends the connection status of HDMI input ports.  # human-readable note (not parsed by stub)
-  params:                         # parameters for the command
-    port: 0                       # HDMI input port index (0-based, platform-dependent)
-    connected: true               # Cable/source state: true = source connected, false = source disconnected
+# HDMI Input Connection Status Event
+#
+# Fires connection-change callback on the HDMI input port.
+
+hdmiinput:
+  command: connection_status
+  # Type: string
+  # Supported values: connection_status
+  # Fires connection-change callback on the HDMI input port.
+
+  description: Sends the connection status of HDMI input ports.
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  params:
+    # Command parameters
+
+    port: 0
+    # Type: integer
+    # HDMI input port index (0-based).
+    # Range: Platform dependent (example: 0, 1, 2...)
+
+    connected: true
+    # Type: boolean
+    # Cable/source state.
+    # Values:
+    #   true  - source connected
+    #   false - source disconnected

@@ -20,9 +20,29 @@
 # *
 #** ******************************************************************************
 
-hdmiinput:                        # root node
-  command: vsifinfo_frame         # command name - injects a Vendor Specific InfoFrame (VSIF) into the HDMI input port
-  description: Sends the vendor specific info frame to HDMI input ports  # human-readable note (not parsed by stub)
-  params:                         # parameters for the command
-    port: 0                       # HDMI input port index (0-based, platform-dependent)
-    data: [0x81, 0x01, 0x0D, 0xA7, 0x03, 0x0C, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]  # raw VSIF bytes per HDMI spec: [type=0x81, version, length, checksum, IEEE OUI (3 bytes), vendor-specific payload]
+# HDMI Input Vendor Specific InfoFrame Event
+#
+# Injects a Vendor Specific InfoFrame (VSIF) into the HDMI input port.
+
+hdmiinput:
+  command: vsifinfo_frame
+  # Type: string
+  # Supported values: vsifinfo_frame
+  # Injects a Vendor Specific InfoFrame (VSIF) into the HDMI input port.
+
+  description: Sends the vendor specific info frame to HDMI input ports
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  params:
+    # Command parameters
+
+    port: 0
+    # Type: integer
+    # HDMI input port index (0-based).
+    # Range: Platform dependent (example: 0, 1, 2...)
+
+    data: [0x81, 0x01, 0x0D, 0xA7, 0x03, 0x0C, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    # Type: list[uint8]
+    # Raw VSIF bytes per HDMI spec.
+    # Format: [type=0x81, version, length, checksum, IEEE OUI (3 bytes), vendor-specific payload]

@@ -19,10 +19,40 @@
 # * limitations under the License.
 # *
 #* ******************************************************************************
-HdmiCec:                          # root node
-  command: update_device_status   # command name - updates power/fault state of an existing CEC device
-  description: Updates the status of an HDMI CEC device  # human-readable note (not parsed by stub)
-  device:                         # device selector and new state values
-    name: "GameConsole"           # name of the target device; must exist in the device map
-    power_status: "off"           # New power state: on | off | standby | transitionToOn | transitionToStandby
-    fault: "yes"                  # Fault state: no = normal operation, yes = device is in an error state
+# HDMI CEC Update Device Status
+#
+# Updates power/fault state of an existing CEC device.
+
+HdmiCec:
+  command: update_device_status
+  # Type: string
+  # Supported values: update_device_status
+  # Updates power/fault state of an existing CEC device.
+
+  description: Updates the status of an HDMI CEC device
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  device:
+    # Device selector and new state values
+
+    name: "GameConsole"
+    # Type: string
+    # Name of the target device; must exist in the device map.
+
+    power_status: "off"
+    # Type: enum string
+    # New power state.
+    # Values:
+    #   on
+    #   off
+    #   standby
+    #   transitionToOn
+    #   transitionToStandby
+
+    fault: "yes"
+    # Type: enum string
+    # Fault state.
+    # Values:
+    #   no  - normal operation
+    #   yes - device is in an error state

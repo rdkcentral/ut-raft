@@ -19,9 +19,31 @@
 # * limitations under the License.
 # *
 #* ******************************************************************************
-HdmiCec:                          # root node
-  command: cec_message            # command name - sends a raw user-defined CEC message
-  description: Send a CEC message  # human-readable note (not parsed by stub)
-  message:                        # CEC message descriptor block
-    user_defined: true            # true = raw payload mode; source/destination/opcode fields are ignored
-    payload: ["0x50", "0x82", "0x10", "0x00"]  # raw CEC frame bytes as hex strings: [initiator+destination, opcode, param1, param2, ...]
+# HDMI CEC Raw User-Defined Message
+#
+# Sends a raw user-defined CEC message as hex bytes.
+
+HdmiCec:
+  command: cec_message
+  # Type: string
+  # Supported values: cec_message
+  # Sends a raw user-defined CEC message.
+
+  description: Send a CEC message
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  message:
+    # CEC message descriptor
+
+    user_defined: true
+    # Type: boolean
+    # Message mode selector.
+    # Values:
+    #   true  - raw payload mode; source/destination/opcode fields are ignored
+    #   false - use named source/destination/opcode
+
+    payload: ["0x50", "0x82", "0x10", "0x00"]
+    # Type: list[string]
+    # Raw CEC frame bytes as hex strings.
+    # Format: [initiator+destination, opcode, param1, param2, ...]

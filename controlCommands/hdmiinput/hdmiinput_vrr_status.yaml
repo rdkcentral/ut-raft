@@ -20,12 +20,50 @@
 # *
 #** ******************************************************************************
 
-hdmiinput:                        # root node
-  command: vrr_status             # command name - fires a Variable Refresh Rate (VRR) status event on the HDMI input port
-  description: Sends the VRR status of HDMI input ports  # human-readable note (not parsed by stub)
-  params:                         # parameters for the command
-    port: 0                       # HDMI input port index (0-based, platform-dependent)
-    vrrActive: true               # Whether VRR is currently active on this port: true | false
-    M_CONST: true                 # M_CONST flag from the VRR metadata: true = constant frame rate mode, false = variable
-    fastVActive: true             # Fast-VActive flag: true = fast vertical active signaling enabled, false = disabled
-    frameRate: 120.0              # Current frame rate in Hz when VRR is active (e.g. 48.0 to 144.0 depending on display)
+# HDMI Input VRR Status Event
+#
+# Fires a Variable Refresh Rate (VRR) status event on the HDMI input port.
+
+hdmiinput:
+  command: vrr_status
+  # Type: string
+  # Supported values: vrr_status
+  # Fires a Variable Refresh Rate (VRR) status event on the HDMI input port.
+
+  description: Sends the VRR status of HDMI input ports
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  params:
+    # Command parameters
+
+    port: 0
+    # Type: integer
+    # HDMI input port index (0-based).
+    # Range: Platform dependent (example: 0, 1, 2...)
+
+    vrrActive: true
+    # Type: boolean
+    # Whether VRR is currently active on this port.
+    # Values:
+    #   true  - VRR active
+    #   false - VRR inactive
+
+    M_CONST: true
+    # Type: boolean
+    # M_CONST flag from the VRR metadata.
+    # Values:
+    #   true  - constant frame rate mode
+    #   false - variable frame rate mode
+
+    fastVActive: true
+    # Type: boolean
+    # Fast-VActive flag.
+    # Values:
+    #   true  - fast vertical active signaling enabled
+    #   false - disabled
+
+    frameRate: 120.0
+    # Type: float
+    # Current frame rate in Hz when VRR is active.
+    # Range: 48.0 to 144.0 depending on display

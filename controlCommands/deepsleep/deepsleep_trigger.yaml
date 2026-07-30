@@ -20,8 +20,32 @@
 # *
 #** ******************************************************************************
 
-deepsleep:                           # root node (Component object begins)
-    command: "DEEPSLEEP_WAKEUP"      # command name - simulates a wakeup event from deep sleep
-    trigger: RCU_BT                  # Wakeup source: RCU_IR | RCU_BT | RCU_RF4CE | LAN | WLAN | FRONT_PANEL | CEC | PRESENCE | VOICE
-                                     # Note: keycode required only for RCU_IR (6), RCU_BT (7), RCU_RF4CE (8); omit for all others
-    keycode: 6                       # Key code sent by remote to trigger wakeup (only for RCU_IR/RCU_BT/RCU_RF4CE)
+# Deep Sleep Wakeup Trigger
+#
+# Simulates a wakeup event from deep sleep.
+
+deepsleep:
+    command: "DEEPSLEEP_WAKEUP"
+    # Type: string
+    # Supported values: DEEPSLEEP_WAKEUP
+    # Simulates a wakeup event from deep sleep.
+
+    trigger: RCU_BT
+    # Type: enum string
+    # Wakeup source to simulate.
+    # Note: keycode required only for RCU_IR, RCU_BT, RCU_RF4CE; omit for all others.
+    # Values:
+    #   RCU_IR
+    #   RCU_BT
+    #   RCU_RF4CE
+    #   LAN
+    #   WLAN
+    #   FRONT_PANEL
+    #   CEC
+    #   PRESENCE
+    #   VOICE
+
+    keycode: 6
+    # Type: uint
+    # Key code sent by remote to trigger wakeup.
+    # Only used for RCU_IR (6), RCU_BT (7), RCU_RF4CE (8).

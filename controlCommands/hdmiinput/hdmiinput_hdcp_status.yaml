@@ -20,10 +20,42 @@
 # *
 #** ******************************************************************************
 
-hdmiinput:                        # root node
-  command: hdcp_status            # command name - fires HDCP authentication-status callback on the HDMI input port
-  description: Sends the HDCP status of HDMI input ports.  # human-readable note (not parsed by stub)
-  params:                         # parameters for the command
-    port: 0                       # HDMI input port index (0-based, platform-dependent)
-    state: AUTHENTICATED          # HDCP state: UNKNOWN | UNAUTHENTICATED | AUTHENTICATION_IN_PROGRESS | AUTHENTICATION_FAILURE | AUTHENTICATED
-    version: VERSION_2_X         # HDCP version reported: UNDEFINED | VERSION_1_X | VERSION_2_X
+# HDMI Input HDCP Status Event
+#
+# Triggers HDCP authentication status callback for an HDMI input port.
+
+hdmiinput:
+  command: hdcp_status
+  # Type: string
+  # Supported values: hdcp_status
+  # Sends the HDCP authentication status of an HDMI input port.
+
+  description: Sends the HDCP status of HDMI input ports.
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  params:
+    # Command parameters
+
+    port: 0
+    # Type: integer
+    # HDMI input port index (0-based).
+    # Range: Platform dependent (example: 0, 1, 2...)
+
+    state: AUTHENTICATED
+    # Type: enum string
+    # HDCP authentication state.
+    # Values:
+    #   UNKNOWN
+    #   UNAUTHENTICATED
+    #   AUTHENTICATION_IN_PROGRESS
+    #   AUTHENTICATION_FAILURE
+    #   AUTHENTICATED
+
+    version: VERSION_2_X
+    # Type: enum string
+    # HDCP version used for authentication.
+    # Values:
+    #   UNDEFINED
+    #   VERSION_1_X
+    #   VERSION_2_X
