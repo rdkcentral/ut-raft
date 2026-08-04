@@ -1,0 +1,48 @@
+#** *****************************************************************************
+# *
+# * If not stated otherwise in this file or this component's LICENSE file the
+# * following copyright and licenses apply:
+# *
+# * Copyright 2025 RDK Management
+# *
+# * Licensed under the Apache License, Version 2.0 (the "License");
+# * you may not use this file except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *
+# * http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *
+#** ******************************************************************************
+
+# HDMI Input Audio InfoFrame Event
+#
+# Injects an Audio InfoFrame into the HDMI input port.
+
+hdmiinput:
+  command: audioinfo_frame
+  # Type: string
+  # Supported values: audioinfo_frame
+  # Injects an Audio InfoFrame into the HDMI input port.
+
+  description: Sends the audioinfo frame to HDMI input ports
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  params:
+    # Command parameters
+
+    port: 0
+    # Type: integer
+    # HDMI input port index (0-based).
+    # Range: Platform dependent (example: 0, 1, 2...)
+
+    data: [0x84, 0x01, 0x0A, 0x70, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    # Type: list[uint8]
+    # Raw Audio InfoFrame bytes per CEA-861.
+    # Format: [type=0x84, version, length, checksum, audio channel count, sampling freq, sample size, ...]

@@ -1,0 +1,64 @@
+#** *****************************************************************************
+# *
+# * If not stated otherwise in this file or this component's LICENSE file the
+# * following copyright and licenses apply:
+# *
+# * Copyright 2026 RDK Management
+# *
+# * Licensed under the Apache License, Version 2.0 (the "License");
+# * you may not use this file except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *
+# * http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *
+#** ******************************************************************************
+
+# Composite Input Video Mode Change Event
+#
+# Reports a detected video mode change on a composite input port (port must be STARTED).
+
+compositeinput:
+  command: video_mode
+  # Type: string
+  # Supported values: video_mode
+  # Reports a detected video mode change on a composite input port.
+
+  description: Reports a detected video mode change on a composite input port (port must be STARTED).
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  params:
+    # Command parameters
+
+    port: 0
+    # Type: integer
+    # Port index (0-based).
+
+    pixelWidth: 720
+    # Type: uint
+    # Horizontal resolution in pixels.
+    # Example: 720 for SD NTSC/PAL
+
+    pixelHeight: 480
+    # Type: uint
+    # Vertical resolution in pixels.
+    # Example: 480 = NTSC (North America), 576 = PAL (Europe)
+
+    interlaced: true
+    # Type: boolean
+    # Scanning method.
+    # Values:
+    #   true  - interlaced (480i/576i)
+    #   false - progressive (480p/576p)
+
+    frameRateInHz: 29.97
+    # Type: float
+    # Frame rate in Hz.
+    # Example: 25.0 = PAL, 29.97 = NTSC, 50.0 = PAL-p, 59.94 = NTSC-p
