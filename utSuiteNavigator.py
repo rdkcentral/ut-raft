@@ -213,7 +213,9 @@ class utCFramework:
             gtest (bool): Flag to indicate whether to parse GTest-style summary format.
 
         Returns:
-            bool: True if the test passed successfully, False if the test failed, or None if the output format is unexpected.
+            True if the test passed successfully, False if the test failed,
+            the string "SKIPPED" if the test was skipped, or None if the
+            output format is unexpected.
         """
 
         if gtest:
@@ -225,24 +227,35 @@ class utCFramework:
 
             # Match Suites, Tests, and Asserts lines
             suite_line = re.search(r"Suites\s+\d+\s+\d+\s+n/a\s+n/a\s+(\d+)\s+n/a", output)
-            test_line = re.search(r"Tests\s+\d+\s+\d+\s+(\d+)\s+(\d+)\s+\d+\s+\d+", output)
+            test_line = re.search(r"Tests\s+\d+\s+\d+\s+(\d+)\s+(\d+)\s+\d+\s+(\d+)", output)
             assert_line = re.search(r"Asserts\s+\d+\s+\d+\s+(\d+)\s+(\d+)\s+\d+", output)
 
             if suite_line and test_line and assert_line:
                 suites_inactive = int(suite_line.group(1))
                 tests_passed = int(test_line.group(1))
                 tests_failed = int(test_line.group(2))
+                tests_skipped = int(test_line.group(3))
                 asserts_passed = int(assert_line.group(1))
                 asserts_failed = int(assert_line.group(2))
 
-                if tests_failed == 0 and asserts_failed == 0 and suites_inactive == 0:
-                    self.log.info("Test passed successfully (GTest format).")
-                    return True
-                else:
+                # Check failure before skip, so a mixed skip+fail run isn't misreported as SKIPPED
+                if tests_failed != 0 or asserts_failed != 0 or suites_inactive != 0:
                     self.log.error(
                         f"Test failed (GTest format). Suites inactive: {suites_inactive}, "
                         f"Tests failed: {tests_failed}, Asserts failed: {asserts_failed}"
                     )
+                    return False
+                elif tests_skipped > 0:
+                    self.log.info(
+                        f"Test skipped (GTest format). Tests skipped: {tests_skipped}, "
+                        f"Tests passed: {tests_passed}"
+                    )
+                    return "SKIPPED"
+                elif tests_passed > 0:
+                    self.log.info("Test passed successfully (GTest format).")
+                    return True
+                else:
+                    self.log.error("Test failed (GTest format). No tests passed, failed, or skipped.")
                     return False
             else:
                 self.log.error("Unexpected GTest output format.")
