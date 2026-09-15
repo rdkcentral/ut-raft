@@ -70,11 +70,16 @@ amlogic_polaris: # Platform name
       - export LD_PRELOAD=libwesteros_gl.so.0.0.0
       - export WESTEROS_GL_GRAPHICS_MAX_SIZE=1920x1080
       - export WESTEROS_GL_MODE=3840x2160x60
+      - export WESTEROS_GL_USE_REFRESH_LOCK=1
+      - export WESTEROS_GL_USE_AMLOGIC_AVSYNC=1
       - export WAYLAND_DISPLAY=main0
+      - export WESTEROS_SINK_AMLOGIC_USE_DMABUF=1
+      - export WESTEROS_SINK_USE_FREERUN=1
+      - export WESTEROS_SINK_USE_ESSRMGR=1
+      - export AAMP_ENABLE_OPT_OVERRIDE=1
       - rm -rf /run/user/0
       - mkdir -p /run/user/0
-      - westeros --renderer libwesteros_render_embedded.so.0.0.0 --display ${WAYLAND_DISPLAY} --embedded --window-size 1920x1080 --noFBO &
-      - export GST_PLUGIN_FEATURE_RANK='westerossink:0,amlhalasink:0'
+      - systemd-cat westeros --renderer libwesteros_render_embedded.so.0.0.0 --display main0 --embedded --window-size 1920x1080 --noFBO &
     play_command: gst-play-1.0 # Player command to play the stream
     stop_command: "\x03" # CNTRL-C
     primary_mixer_input_config: ""
