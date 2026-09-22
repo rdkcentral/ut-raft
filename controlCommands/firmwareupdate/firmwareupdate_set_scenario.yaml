@@ -1,0 +1,71 @@
+#******************************************************************************
+# *
+# * If not stated otherwise in this file or this component's LICENSE file the
+# * following copyright and licenses apply:
+# *
+# * Copyright 2026 RDK Management
+# *
+# * Licensed under the Apache License, Version 2.0 (the "License");
+# * you may not use this file except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *     http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *
+#******************************************************************************
+# Firmware Update Simulation Scenario
+#
+# Configures the firmware-update outcome injected by the virtual component.
+firmwareupdate:
+  command: set_scenario
+  # Type: string
+  # Supported values: set_scenario
+  # Configures the firmware update simulation scenario.
+  description: Simulate a firmware image file open failure during pre-validation.
+  # Type: string
+  # Human-readable description of the command (documentation only).
+  params:
+    # Command parameters
+    name: file_open_fail
+    # Type: enum string
+    # Unique scenario identifier.
+    # Values:
+    #   success                         - Complete the update successfully.
+    #   general_error                   - Report an unspecified update failure.
+    #   file_open_fail                  - Report that the firmware image cannot be opened.
+    #   invalid_image_type              - Report an unsupported firmware image type.
+    #   invalid_signature               - Report an invalid firmware image signature.
+    #   invalid_size                    - Report an invalid firmware image size.
+    #   invalid_product                 - Report a firmware image for another product.
+    #   write_failed                    - Report a failure while writing the image.
+    #   verify_failed                   - Report a post-write verification failure.
+    #   verify_signature_failed         - Report a signature-verification failure.
+    stage: pre_validation
+    # Type: enum string
+    # Firmware update stage where the selected result is injected.
+    # Values:
+    #   pre_validation
+    #   write
+    #   post_validation
+    final_result: ERROR_FILE_OPEN_FAIL
+    # Type: enum string
+    # FirmwareUpdateResult value reported through onCompleted().
+    # Values:
+    #   SUCCESS
+    #   ERROR_GENERAL
+    #   ERROR_FILE_OPEN_FAIL
+    #   ERROR_IMAGE_INVALID_TYPE
+    #   ERROR_IMAGE_INVALID_SIGNATURE
+    #   ERROR_IMAGE_INVALID_SIZE
+    #   ERROR_IMAGE_INVALID_PRODUCT
+    #   ERROR_FW_UPDATE_WRITE_FAILED
+    #   ERROR_FW_UPDATE_VERIFY_FAILED
+    #   ERROR_FW_UPDATE_VERIFY_SIGNATURE_FAILED
+    report: Simulated firmware image file open failure.
+    # Type: string
+    # Additional report string returned through onCompleted().

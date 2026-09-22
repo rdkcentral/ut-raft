@@ -79,6 +79,8 @@ controlCommands/
 ├── deepsleep/
 │   ├── deepsleep_trigger.yaml                 # simulate wakeup event (RCU_BT, LAN, CEC, …)
 │   └── deepsleep_simulate_error.yaml          # inject error into sleep sequence
+├── firmwareupdate
+│   └── firmwareupdate_set_scenario.yaml       # simulate firmware image file open failures
 ├── hdmicec/
 │   ├── hdmicec_device_add.yaml                # add device to CEC network
 │   ├── hdmicec_device_remove.yaml             # remove device from CEC network
