@@ -1,0 +1,58 @@
+#** *****************************************************************************
+# *
+# * If not stated otherwise in this file or this component's LICENSE file the
+# * following copyright and licenses apply:
+# *
+# * Copyright 2023 RDK Management
+# *
+# * Licensed under the Apache License, Version 2.0 (the "License");
+# * you may not use this file except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *
+# http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *
+#* ******************************************************************************
+# HDMI CEC Update Device Status
+#
+# Updates power/fault state of an existing CEC device.
+
+HdmiCec:
+  command: update_device_status
+  # Type: string
+  # Supported values: update_device_status
+  # Updates power/fault state of an existing CEC device.
+
+  description: Updates the status of an HDMI CEC device
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  device:
+    # Device selector and new state values
+
+    name: "GameConsole"
+    # Type: string
+    # Name of the target device; must exist in the device map.
+
+    power_status: "off"
+    # Type: enum string
+    # New power state.
+    # Values:
+    #   on
+    #   off
+    #   standby
+    #   transitionToOn
+    #   transitionToStandby
+
+    fault: "yes"
+    # Type: enum string
+    # Fault state.
+    # Values:
+    #   no  - normal operation
+    #   yes - device is in an error state

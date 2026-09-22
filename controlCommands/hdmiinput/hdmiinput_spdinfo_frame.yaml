@@ -1,0 +1,48 @@
+#** *****************************************************************************
+# *
+# * If not stated otherwise in this file or this component's LICENSE file the
+# * following copyright and licenses apply:
+# *
+# * Copyright 2025 RDK Management
+# *
+# * Licensed under the Apache License, Version 2.0 (the "License");
+# * you may not use this file except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *
+# * http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *
+#** ******************************************************************************
+
+# HDMI Input SPD InfoFrame Event
+#
+# Injects a Source Product Descriptor (SPD) InfoFrame.
+
+hdmiinput:
+  command: spdinfo_frame
+  # Type: string
+  # Supported values: spdinfo_frame
+  # Injects a Source Product Descriptor (SPD) InfoFrame.
+
+  description: Sends the spdinfo frame to HDMI input ports
+  # Type: string
+  # Human-readable description of the command (documentation only).
+
+  params:
+    # Command parameters
+
+    port: 0
+    # Type: integer
+    # HDMI input port index (0-based).
+    # Range: Platform dependent (example: 0, 1, 2...)
+
+    data: [0x83, 0x01, 0x19, 0x8E, 0x4F, 0x50, 0x45, 0x4E, 0x41, 0x49, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x42, 0x4C, 0x55, 0x52, 0x41, 0x59, 0x20, 0x20, 0x20, 0x20, 0x20, 0x01]
+    # Type: list[uint8]
+    # Raw SPD InfoFrame bytes per CEA-861.
+    # Format: [type=0x83, version, length, checksum, vendor name (8 bytes), product name (16 bytes), source device type]
