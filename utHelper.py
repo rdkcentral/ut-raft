@@ -156,7 +156,7 @@ class utHelperClass(testController):
         """
         activeDevice = self.devices.getDevice(device)
         session = activeDevice.getConsoleSession()
-        self.log.info("dirPath:[%s]", dirPath)
+        self.log.info(f"dirPath:[{dirPath}]")
         session.write("mkdir " + dirPath)  # Send the 'mkdir' command to create the directory
         session.write("\n")  # Send a newline to execute the command
 
