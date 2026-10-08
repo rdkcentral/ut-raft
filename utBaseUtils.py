@@ -119,6 +119,7 @@ class utBaseUtils():
     def scpCopy(self, session, sourcePath, destinationPath, isRemoteSource:bool=False):
         """
         Copies a file between the host machine and a remote device using SCP (Secure Copy Protocol) over SSH.
+        The command forces the legacy SCP protocol because supported DUT images may not provide an SFTP server.
         The direction of the transfer is determined by the isRemoteSource parameter:
         If isRemoteSource is False (default), the function copies a file from the host machine to the remote device.It ensures the target directory exists on the device before copying.
         If isRemoteSource is True, the function copies a file from the remote device to the host machine.It ensures the target directory exists on the local machine before copying.
@@ -152,6 +153,7 @@ class utBaseUtils():
         # Construct the SCP command with options to disable strict host key checking and known_hosts file
         command = [
             "scp",
+            "-O",
             "-P", str(port),
             "-o", "StrictHostKeyChecking=no",
             "-o", "UserKnownHostsFile=/dev/null",
@@ -168,6 +170,7 @@ class utBaseUtils():
     def rsync(self, session, sourcePath, destinationPath):
         """
         Synchronizes files from a local source to a remote destination using rsync over SSH.
+        Falls back to SCP when the DUT does not provide the rsync command.
 
         Args:
             session (session class): The active session object that contains SSH connection details.
@@ -183,7 +186,7 @@ class utBaseUtils():
         session.write("rsync")
         result = session.read_until("rsync")
         message = ""
-        if "command not found" in result:
+        if "not found" in result.lower():
             self.log.error("Target doesn't support rsync, using scp copy to copy the folder")
             for files in os.listdir(sourcePath):
                 message += self.scpCopy(session, os.path.join(sourcePath, files), destinationPath)
