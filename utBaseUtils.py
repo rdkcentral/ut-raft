@@ -184,7 +184,7 @@ class utBaseUtils():
             self.log.fatal("Session type must be 'ssh'")
 
         session.write("rsync")
-        result = session.read_until("rsync")
+        result = session.read_until(session.prompt)
         message = ""
         if "not found" in result.lower():
             self.log.error("Target doesn't support rsync, using scp copy to copy the folder")
