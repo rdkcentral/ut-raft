@@ -81,6 +81,7 @@ amlogic_polaris: # Platform name
       - mkdir -p /run/user/0
       - systemd-cat westeros --renderer libwesteros_render_embedded.so.0.0.0 --display main0 --embedded --window-size 1920x1080 --noFBO &
       - export GST_PLUGIN_FEATURE_RANK=westerossink:NONE,amlhalasink:NONE
+      - tinymix set 0 100
     play_command: gst-play-1.0 # Player command to play the stream
     stop_command: "\x03" # CNTRL-C
     primary_mixer_input_config: ""
