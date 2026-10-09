@@ -139,13 +139,13 @@ class utBaseUtils():
         username = session.username
         port = session.port
         if not isRemoteSource:
-            # When user needs to copy from device to host machine
+            # When user needs to copy from host machine to device
             destination = f"{username}@{session.address}:{destinationPath}"
             source = sourcePath
             # make sure that the folder is created on the device
-            session.write(f"mkdir -p {destination}")
+            session.write(f"mkdir -p {destinationPath}")
         else:
-            # When user needs to copy from host machine to device
+            # When user needs to copy from device to host machine
             source = f"{username}@{session.address}:{sourcePath}"
             destination = destinationPath
             os.makedirs(destinationPath, exist_ok = True )
@@ -154,18 +154,24 @@ class utBaseUtils():
         command = [
             "scp",
             "-O",
+        ]
+        if not isRemoteSource and os.path.isdir(sourcePath):
+            command.append("-r")
+        command.extend([
             "-P", str(port),
             "-o", "StrictHostKeyChecking=no",
             "-o", "UserKnownHostsFile=/dev/null",
             "-o", "HostKeyAlgorithms=ssh-rsa,rsa-sha2-512,rsa-sha2-256,ssh-ed25519",
             source, destination
-        ]
+        ])
 
         # Execute the SCP command and capture the output
         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        message = result.stdout.decode('utf-8').strip()
+        if result.returncode != 0:
+            error = result.stderr.decode('utf-8', errors='replace').strip()
+            raise RuntimeError(f"SCP transfer failed: {error}")
 
-        return message
+        return result.stdout.decode('utf-8').strip()
 
     def rsync(self, session, sourcePath, destinationPath):
         """
