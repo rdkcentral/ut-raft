@@ -119,7 +119,7 @@ class utBaseUtils():
     def scpCopy(self, session, sourcePath, destinationPath, isRemoteSource:bool=False):
         """
         Copies a file between the host machine and a remote device using SCP (Secure Copy Protocol) over SSH.
-        The command first uses the default SCP protocol and retries with the legacy protocol when needed.
+        The command forces the legacy SCP protocol because supported DUT images may not provide an SFTP server.
         The direction of the transfer is determined by the isRemoteSource parameter:
         If isRemoteSource is False (default), the function copies a file from the host machine to the remote device.It ensures the target directory exists on the device before copying.
         If isRemoteSource is True, the function copies a file from the remote device to the host machine.It ensures the target directory exists on the local machine before copying.
@@ -153,6 +153,7 @@ class utBaseUtils():
         # Construct the SCP command with options to disable strict host key checking and known_hosts file
         command = [
             "scp",
+            "-O",
             "-P", str(port),
             "-o", "StrictHostKeyChecking=no",
             "-o", "UserKnownHostsFile=/dev/null",
@@ -160,17 +161,11 @@ class utBaseUtils():
             source, destination
         ]
 
-        # Prefer the default SCP protocol, then retry with legacy SCP for older DUTs.
+        # Execute the SCP command and capture the output
         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if result.returncode != 0:
-            legacy_command = command[:1] + ["-O"] + command[1:]
-            result = subprocess.run(legacy_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        message = result.stdout.decode('utf-8').strip()
 
-        if result.returncode != 0:
-            error = result.stderr.decode('utf-8', errors='replace').strip()
-            raise RuntimeError(f"SCP transfer failed after standard and legacy attempts: {error}")
-
-        return result.stdout.decode('utf-8').strip()
+        return message
 
     def rsync(self, session, sourcePath, destinationPath):
         """
