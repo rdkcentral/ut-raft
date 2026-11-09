@@ -46,7 +46,7 @@ HdmiCec:
       # ISO 639-2 three-letter language code.
       # Example: eng, fra, deu
 
-      cec_version: "1.4"
+      cec_version: "2.0"
       # Type: string
       # CEC spec version.
       # Values:
@@ -54,7 +54,18 @@ HdmiCec:
       #   "1.4"
       #   "2.0"
 
-      device_type: "TV"
+      device_type_primary: "TV"
+      # Type: enum string
+      # CEC device type.
+      # Values:
+      #   TV
+      #   RecordingDevice
+      #   PlaybackDevice
+      #   Tuner
+      #   AudioSystem
+      #   Switch
+
+      device_type_secondary: "NONE"
       # Type: enum string
       # CEC device type.
       # Values:
@@ -111,11 +122,15 @@ HdmiCec:
         # Type: string
         # ISO 639-2 language code.
 
-        cec_version: "1.4"
+        cec_version: "2.0"
         # Type: string
         # CEC spec version.
 
-        device_type: "TV"
+        device_type_primary: "TV"
+        # Type: enum string
+        # CEC device type.
+
+        device_type_secondary: "NONE"
         # Type: enum string
         # CEC device type.
 

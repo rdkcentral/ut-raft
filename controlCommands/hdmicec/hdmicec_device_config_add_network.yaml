@@ -46,7 +46,7 @@ HdmiCec:
       # ISO 639-2 three-letter language code.
       # Example: eng, fra, deu
 
-      cec_version: "1.4"
+      cec_version: "2.0"
       # Type: string
       # CEC spec version.
       # Values:
@@ -54,7 +54,18 @@ HdmiCec:
       #   "1.4"
       #   "2.0"
 
-      device_type: "TV"
+      device_type_primary: "TV"
+      # Type: enum string
+      # CEC device type.
+      # Values:
+      #   TV
+      #   RecordingDevice
+      #   PlaybackDevice
+      #   Tuner
+      #   AudioSystem
+      #   Switch
+
+      device_type_secondary: "NONE"
       # Type: enum string
       # CEC device type.
       # Values:
@@ -108,10 +119,13 @@ HdmiCec:
         language: "eng"
         # Type: string
         # ISO 639-2 language code.
-        cec_version: "1.4"
+        cec_version: "2.0"
         # Type: string
         # CEC spec version.
-        device_type: "TV"
+        device_type_primary: "TV"
+        # Type: enum string
+        # CEC device type.
+        device_type_secondary: "NONE"
         # Type: enum string
         # CEC device type.
         power_status: "on"
@@ -138,11 +152,13 @@ HdmiCec:
             # Type: string
             language: "eng"
             # Type: string
-            cec_version: "1.4"
+            cec_version: "2.0"
             # Type: string
-            device_type: "AudioSystem"
+            device_type_primary: "AudioSystem"
             # Type: enum string
             # AudioSystem = AV receiver / soundbar
+            device_type_secondary: "NONE"
+            # Type: enum string
             power_status: "on"
             # Type: enum string
             fault: no
@@ -166,9 +182,11 @@ HdmiCec:
                 # Type: string
                 language: "eng"
                 # Type: string
-                cec_version: "1.4"
+                cec_version: "2.0"
                 # Type: string
-                device_type: "PlaybackDevice"
+                device_type_primary: "PlaybackDevice"
+                # Type: enum string
+                device_type_secondary: "none"
                 # Type: enum string
                 power_status: "on"
                 # Type: enum string
@@ -195,7 +213,9 @@ HdmiCec:
                 # Type: string
                 cec_version: "1.4"
                 # Type: string
-                device_type: "PlaybackDevice"
+                device_type_primary: "PlaybackDevice"
+                # Type: enum string
+                device_type_secondary: "None"
                 # Type: enum string
                 power_status: "standby"
                 # Type: enum string
@@ -222,7 +242,9 @@ HdmiCec:
             # Type: string
             cec_version: "1.4"
             # Type: string
-            device_type: "PlaybackDevice"
+            device_type_primary: "PlaybackDevice"
+            # Type: enum string
+            device_type_secondary: "None"
             # Type: enum string
             power_status: "standby"
             # Type: enum string
@@ -249,7 +271,9 @@ HdmiCec:
             # Type: string
             cec_version: "1.4"
             # Type: string
-            device_type: "RecordingDevice"
+            device_type_primary: "RecordingDevice"
+            # Type: enum string
+            device_type_secondary: "None"
             # Type: enum string
             power_status: "on"
             # Type: enum string
@@ -275,7 +299,9 @@ HdmiCec:
                 # Type: string
                 cec_version: "1.4"
                 # Type: string
-                device_type: "PlaybackDevice"
+                device_type_primary: "PlaybackDevice"
+                # Type: enum string
+                device_type_secondary: "None"
                 # Type: enum string
                 power_status: "on"
                 # Type: enum string
