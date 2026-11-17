@@ -1,0 +1,108 @@
+#** *****************************************************************************
+# *
+# * If not stated otherwise in this file or this component's LICENSE file the
+# * following copyright and licenses apply:
+# *
+# * Copyright 2025 RDK Management
+# *
+# * Licensed under the Apache License, Version 2.0 (the "License");
+# * you may not use this file except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *
+# * http://www.apache.org/licenses/LICENSE-2.0
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *
+#** ******************************************************************************
+# HDMI Input Stream Playback Configuration
+#
+# This configuration enables injection of pre-recorded raw video and audio
+# streams into the HDMI input pipeline for validation and testing purposes.
+# The specified I420 video frames and PCM audio samples are continuously
+# looped to emulate a live HDMI source, allowing verification of video,
+# audio, synchronization, and end-to-end processing behavior.
+#
+# Media characteristics:
+#   Video: 640x480, I420, 60 FPS
+#   Audio: 48 kHz, Stereo, 16-bit PCM
+#
+# Note:
+# - The referenced media files must exist on the target device.
+# - Playback will repeat indefinitely while 'loop' is set to true.
+# - This configuration is intended for automated test and validation
+#   environments.
+#
+hdmiinput:
+  command: stream_playback
+
+  params:
+    # HDMI input port to use.
+    # Usually 0 for HDMI-IN-0 unless the platform exposes multiple inputs.
+    port: 0
+
+    # Configuration schema version expected by the playback framework.
+    schemaVersion: 1
+
+    # Enable/disable playback injection.
+    enabled: true
+
+    # Playback mode:
+    #   raw_loop - repeatedly inject raw audio/video frames from files.
+    mode: raw_loop
+
+    # Continuously loop the media instead of stopping after frameCount.
+    loop: true
+
+    video:
+      # Raw video frame file containing I420 frames.
+      path: /run/hdmiinput/video.frames.bin
+
+      # Pixel format of the source video.
+      # Supported values are framework-dependent.
+      pixelFormat: I420
+
+      # Frame width in pixels.
+      width: 640
+
+      # Frame height in pixels.
+      height: 480
+
+      # Number of bytes per video line.
+      # For I420 this is typically equal to width.
+      strideBytes: 640
+
+      # Frame rate numerator/denominator.
+      # 60/1 = 60 FPS.
+      fpsNumerator: 60
+      fpsDenominator: 1
+
+      # Number of frames available in the file.
+      # At 60 FPS, 300 frames correspond to ~5 seconds of video.
+      frameCount: 300
+
+    audio:
+      # Enable audio playback alongside video.
+      enabled: true
+
+      # Raw PCM audio file.
+      path: /run/hdmiinput/audio.s16le
+
+      # Audio sample format.
+      # S16LE = Signed 16-bit Little Endian PCM.
+      sampleFormat: S16LE
+
+      # Audio sampling rate in Hz.
+      sampleRateHz: 48000
+
+      # Number of audio channels.
+      # 2 = stereo.
+      channels: 2
+
+      # Number of audio frames delivered per block.
+      # 480 frames at 48 kHz = 10 ms audio chunks.
+      blockFrames: 480
