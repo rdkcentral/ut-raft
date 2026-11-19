@@ -68,11 +68,20 @@ class UtYamlLoader(yaml.SafeLoader):
         Preserve duplicate mapping keys by merging their values.
         """
 
+        # flatten_mapping prepends pairs inherited via '<<' to node.value,
+        # so count the explicit pairs first to identify the inherited ones.
+        explicit_count = sum(
+            1 for key_node, _ in node.value
+            if key_node.tag != 'tag:yaml.org,2002:merge'
+        )
         self.flatten_mapping(node)
+        inherited_count = len(node.value) - explicit_count
+        inherited_keys = set()
 
         result = {}
 
-        for key_node, value_node in node.value:
+        for index, (key_node, value_node) in enumerate(node.value):
+            is_inherited = index < inherited_count
 
             key = self.construct_object(key_node, deep=deep)
 
@@ -84,14 +93,21 @@ class UtYamlLoader(yaml.SafeLoader):
                     key_node.start_mark
                 )
 
-            value = self.construct_object(value_node, deep=deep)
+            # Construct deeply so collections are populated before merging.
+            value = self.construct_object(value_node, deep=True)
 
-            if key in result:
+            if key in inherited_keys and not is_inherited:
+                # Explicit values override inherited '<<' values.
+                result[key] = value
+                inherited_keys.discard(key)
+            elif key in result:
                 result[key] = self._merge_values(
                     result[key], value
                 )
             else:
                 result[key] = value
+                if is_inherited:
+                    inherited_keys.add(key)
 
         return result
 
@@ -166,6 +182,22 @@ class UtYamlLoader(yaml.SafeLoader):
             include_stack=(path,),
             depth=0
         )
+
+    @classmethod
+    def safe_load(cls, filename):
+        """PyYAML-style alias of from_file: load YAML with includes."""
+
+        return cls.from_file(filename)
+
+    @staticmethod
+    def safe_dump(data, **kwargs):
+        """
+        PyYAML-style safe_dump: return data as a YAML string.
+        Key order is preserved unless sort_keys is given.
+        """
+
+        kwargs.setdefault("sort_keys", False)
+        return yaml.safe_dump(data, **kwargs)
 
     # ---------------------------------------------------------
     # Parse YAML file
@@ -353,9 +385,31 @@ UtYamlLoader.add_constructor(
 # Test and example usage code
 if __name__ == '__main__':
     import os
+    import tempfile
+
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    config = UtYamlLoader.from_file(
-        dir_path + "example.yaml"
-    )
-    import yaml
-    print(yaml.safe_dump(config, sort_keys=False))
+    example_file = os.path.join(dir_path, "example.yaml")
+
+    # Static sample used when example.yaml is not present
+    EXAMPLE_YAML = """\
+defaults: &defaults
+  enabled: false
+  retries: 3
+device:
+  <<: *defaults
+  enabled: true
+items: [a]
+items: [b]
+"""
+
+    if os.path.isfile(example_file):
+        config = UtYamlLoader.safe_load(example_file)
+    else:
+        # The loader is file based, so write the sample to a temp file
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            sample_file = os.path.join(tmp_dir, "example.yaml")
+            with open(sample_file, "w", encoding="utf-8") as f:
+                f.write(EXAMPLE_YAML)
+            config = UtYamlLoader.safe_load(sample_file)
+
+    print(UtYamlLoader.safe_dump(config))
