@@ -249,9 +249,9 @@ class UtYamlLoader(yaml.SafeLoader):
             )
 
         if not path.is_file():
-            raise FileNotFoundError(
-                f"Included YAML file not found: {path}"
-            )
+            print(f"Included YAML file not found: {path}")
+            # and skip this include file
+            return None
 
         data = cls._parse_file(path)
 
@@ -318,6 +318,10 @@ class UtYamlLoader(yaml.SafeLoader):
                             include_stack,
                             depth
                         )
+
+                        # Ignore if included file is not found
+                        if included_data is None:
+                            continue
 
                         if not isinstance(included_data, dict):
                             raise TypeError(
