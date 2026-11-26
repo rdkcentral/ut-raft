@@ -43,7 +43,10 @@ hdmiinput:
   params:
     # HDMI input port to use.
     # Usually 0 for HDMI-IN-0 unless the platform exposes multiple inputs.
+    # To target port 1, change all marked alternatives together and add its vic.
+    # Each submitted command configures one port, not both simultaneously.
     port: 0
+    # Port 1 alternative: 1
 
     # Configuration schema version expected by the playback framework.
     schemaVersion: 1
@@ -61,6 +64,7 @@ hdmiinput:
     video:
       # Raw video frame file containing I420 frames.
       path: /run/hdmiinput/video.frames.bin
+      # Port 1 alternative: /run/hdmiinput/video.frames.bin-port1
 
       # Pixel format of the source video.
       # Supported values are framework-dependent.
@@ -68,13 +72,16 @@ hdmiinput:
 
       # Frame width in pixels.
       width: 640
+      # Port 1 alternative: 1280
 
       # Frame height in pixels.
       height: 480
+      # Port 1 alternative: 720
 
       # Number of bytes per video line.
       # For I420 this is typically equal to width.
       strideBytes: 640
+      # Port 1 alternative: 1280
 
       # Frame rate numerator/denominator.
       # 60/1 = 60 FPS.
@@ -84,6 +91,11 @@ hdmiinput:
       # Number of frames available in the file.
       # At 60 FPS, 300 frames correspond to ~5 seconds of video.
       frameCount: 300
+      # Port 1 alternative: 60
+
+      vic: VIC1_640_480_P_60_4_3
+      # Port 1 alternative:
+      # vic: VIC4_1280_720_P_60_16_9
 
     audio:
       # Enable audio playback alongside video.
@@ -91,6 +103,7 @@ hdmiinput:
 
       # Raw PCM audio file.
       path: /run/hdmiinput/audio.s16le
+      # Port 1 alternative: /run/hdmiinput/audio.s16le
 
       # Audio sample format.
       # S16LE = Signed 16-bit Little Endian PCM.
