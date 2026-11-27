@@ -20,9 +20,10 @@
 # * limitations under the License.
 # *
 #* ******************************************************************************
-import yaml
 import sys
 import os
+
+from utYamlLoader import UtYamlLoader
 
 class ConfigRead:
     """
@@ -81,7 +82,7 @@ class ConfigRead:
                     self.fields = data.fields
             else:
                 # Read YAML data
-                yaml_data = self.__load_yaml__(data)
+                yaml_data = UtYamlLoader.safe_load(data)
                 activate_data = yaml_data
 
                 if start_key:
@@ -148,12 +149,12 @@ class ConfigRead:
         """
         if isinstance(input_var, str) and os.path.isfile(input_var):
             with open(input_var, 'r') as file:
-                data = yaml.safe_load(file)
+                data = UtYamlLoader.safe_load(file)
                 if data is None:
                     self.log.error("Invalid Input File: [{}]".format(input_var))
                 return data
         elif isinstance(input_var, str):
-                data = yaml.safe_load(input_var)
+                data = UtYamlLoader.safe_load(input_var)
                 if data is None:
                     self.log.error("Invalid Input File: [{}]".format(input_var))
                 return data
